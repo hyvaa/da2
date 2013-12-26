@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+
+	<title></title>
+
+<script src="jquery.min.js"></script>
+<script src="jquery-ui.js"></script>
+<script src="jquery.handsontable.full.js"></script>
+<script src="numeral.de-de.js"></script>
+<script src="jquery.blockUI.js"></script>
+
+<link rel="stylesheet" media="screen" href="jquery.handsontable.full.css">
+<link rel="stylesheet" href="jquery-ui.css">
+
+	
+<style type="text/css"> 
+body {
+    background: white;
+    margin: 30px;
+}
+h2 {
+    margin: 20px 0;
+}
+.handsontable .currentRow {
+  background-color: #E7E8EF;
+}
+
+.handsontable .currentCol {
+  background-color: #F9F9FB;
+}
+
+</style>
+
+
+<script> 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+var today;
+
+var incomeColHeaders = ["차트번호","이름","나이/성별","치식","치료내용","현금-보험","현금-비보","카드-보험","카드-비보","계좌"];
+var incomeColWidth =   [   100,     60,    70,          150,    200,     100,       100,        100,        100,     100];
+
+
+var incomeData = [
+	{ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 }
+];
+var incomeSumData = [
+	{cashInsu:0,cashNoninsu:0,cardInsu:0,cardNoninsu:0,transfer:0 }
+];
+var incomeSumCashInsu=0;
+var incomeSumCashNonInsu=0;
+var incomeSumCardInsu=0;
+var incomeSumCardNonInsu=0;
+var expenseSumCash=0;
+
+var expenseColHeaders = [   "지출내역", "액수"];
+var expenseColWidth = [        280,       70];
+var expenseData = [
+	{ no:1, cash:0 }
+];
+var expenseSumData = [ 
+	{cash:0} 
+];
+var balanceData = [  ];
+
+///////////////////////////////////////
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function toEightDigitString(date) {
+	var tempDate = new Date(date.getTime() + (9*60*60*1000));  //because temp-string is UTC value...
+	var temp = tempDate.toISOString();
+	var result = temp.substr(0,4) + temp.substr(5,2) + temp.substr(8,2);
+	
+	return (result);
+}	
+function toDate(str8) {	
+	var dateString = str8.substr(0,4)+'-'+str8.substr(4,2)+'-'+str8.substr(6,2);	
+	
+	return new Date(dateString);  
+}
+
+function ageGender(now, birth8digit, ssn) {
+	
+	var interval = (now.getTime() - (toDate(birth8digit)).getTime());
+	var genderDiv = (ssn).substr(6,1);
+	var gender = (genderDiv=='1' || genderDiv=='3')?'M':(genderDiv=='2' || genderDiv=='4')?'F':'?';
+	
+	return ('' + Math.floor(interval/ (1000*60*60*24*365)) + gender);
+
+	
+}
+////////////////////////////////////////////
+
+
+
+$(document).ready(function () {
+	today = new Date();
+	
+	$("#incomeTable").handsontable({
+		data: incomeData,
+		columns: [
+			{data:"chartNo"},
+			{data:"name"},
+			{data:"ageGender"},
+			{data:"toothNo"},
+			{data:"tx"},
+			{data:"cashInsu", type:'numeric',format:'0,0' , renderer: function(instance, td, row, col, prop, value){ $("#incomeSum").handsontable('render');Handsontable.NumericRenderer.apply(this, arguments);}},
+			{data:"cashNonInsu", type:'numeric',format:'0,0'},
+			{data:"cardInsu", type:'numeric',format:'0,0'},
+			{data:"cardNonInsu", type:'numeric',format:'0,0'},		
+			{data:"transfer", type:'numeric',format:'0,0'},	
+		],
+		startRows: 7,
+		startCols: 4,
+		colHeaders: incomeColHeaders,
+		colWidths: incomeColWidth,
+		columnSorting: true,
+		rowHeaders: true,
+		
+		contextMenu: ['row_above', 'row_below', 'remove_row'],
+		
+		minSpareRows:1,
+		
+	});
+	
+	$('#incomeTable').handsontable('getInstance').addHook('afterChange', function(event, data) {
+				
+		var row = event[0][0];
+		var id = event[0][1];
+		var content = event[0][3];
+		
+		if (id == 'chartNo') {
+			
+			$.ajax({
+				url:'/datamine/chart/'+content,
+				type: 'GET',
+				success: function(data) {
+					if (data.length==0) {			// invalid chart number 
+						incomeData[row].name = '-';
+					} else {
+						incomeData[row].name = data[0].name;
+						incomeData[row].ageGender = ageGender(new Date(), data[0].birth8digit, data[0].ssn);
+						
+					}				
+					$("#incomeTable").handsontable('render');
+				}
+			});
+		} else if ( id == 'name') {
+			$.ajax({
+				url:'/datamine/name/'+content,
+				type: 'GET',
+				success: function(data) {					
+					$('#radio-select').empty();
+					
+					if (data.length==0) {
+						// invalid name // 
+						incomeData[row].chartNo = '';
+						$("#incomeTable").handsontable('render');
+					} else if (data.length==1) {
+						incomeData[row].chartNo = data[0].chartNo;
+						incomeData[row].ageGender = ageGender(new Date(), data[0].birth8digit, data[0].ssn);
+						$("#incomeTable").handsontable('render');
+						$('#radio-select').empty();
+					} else {
+						for(var i in data) {
+							
+							selectStr='<li class="ui-widget-content">'						
+								+ data[i].name+' / '+data[i].chartNo+' / '+data[i].ssn
+								+ '</li>';
+							$('#radio-select').append(selectStr);
+						};		
+								
+						
+						$("#dialog-chartNo").dialog("open"); 
+						$('#radio-select').selectable();
+						$('li').click( function (event) {
+							index = $(this).index();
+							//console.log("selected"+index);
+							$("#dialog-chartNo").dialog("close"); 
+							incomeData[row].chartNo = data[index].chartNo;
+							incomeData[row].ageGender = ageGender(new Date(), data[index].birth8digit, data[index].ssn);
+							$("#incomeTable").handsontable('render');
+							$('#radio-select').empty();
+							
+						});
+					
+						
+					 }
+					 
+				}
+			
+			});
+			
+		}; 
+	});
+	
+	
+	$("#incomeSum").handsontable({
+		
+		colWidths: [630,100,100,100,100,100],
+		columns: [
+			//{readOnly: true},{readOnly: true},{readOnly: true},{readOnly: true},{readOnly: true},{readOnly: true},
+			{readOnly: true},
+			{data:"cashInsu", type:'numeric' ,format:'0,0', readOnly: true, renderer: function(instance, td, row, col, prop, value){ value=sumCashInsu(); Handsontable.NumericRenderer.apply(this, arguments); incomeConclusion(); }},
+			{data:"cashNoninsu", type:'numeric',format:'0,0',  readOnly: true, renderer: function(instance, td, row, col, prop, value){ value=sumCashNonInsu(); Handsontable.NumericRenderer.apply(this, arguments); incomeConclusion();}},
+			{data:"cardInsu", type:'numeric',format:'0,0',  readOnly: true, renderer: function(instance, td, row, col, prop, value){ value=sumCardInsu(); Handsontable.NumericRenderer.apply(this, arguments); incomeConclusion();}},
+			{data:"cardNoninsu", type:'numeric',format:'0,0',  readOnly: true, renderer: function(instance, td, row, col, prop, value){ value=sumCardNonInsu(); Handsontable.NumericRenderer.apply(this, arguments);incomeConclusion();}},		
+			{data:"transfer", type:'numeric',format:'0,0',  readOnly: true, renderer: function(instance, td, row, col, prop, value){ value=sumTransfer(); Handsontable.NumericRenderer.apply(this, arguments); }},
+			//{readOnly: true}
+		],		
+		startRows: 1,
+		startCols: 13,		
+		//rowHeaders:true,
+		data: incomeSumData
+	});
+	function sumCashInsu() { incomeSumCashInsu=incomeData.reduce( function(a,b) { return (a+Number(b.cashInsu)); },0); return incomeSumCashInsu;	}	
+	function sumCashNonInsu() { incomeSumCashNonInsu=incomeData.reduce( function(a,b) { return (a+Number(b.cashNonInsu)); },0);	return incomeSumCashNonInsu; }	
+	function sumCardInsu() { incomeSumCardInsu=incomeData.reduce( function(a,b) { return (a+Number(b.cardInsu)); },0); return incomeSumCardInsu;	}	
+	function sumCardNonInsu() { incomeSumCardNonInsu=incomeData.reduce( function(a,b) { return (a+Number(b.cardNonInsu)); },0);	return incomeSumCardNonInsu; }
+	function sumTransfer() { return incomeData.reduce( function(a,b) { return (a+Number(b.transfer)); },0);	}		
+	
+	function incomeConclusion() {
+		$("#incomeConclusion").html("<p>현금수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCashNonInsu)
+										+"</p><p>카드수입합계 : "+numberWithCommas(incomeSumCardInsu+incomeSumCardNonInsu)
+										+"</p><p>보험수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCardInsu)
+										+"</p><p>비보험수입합계 : "+numberWithCommas(incomeSumCashNonInsu+incomeSumCardNonInsu)
+										+"</p><p>총수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCashNonInsu+incomeSumCardInsu+incomeSumCardNonInsu)
+										+"</p>"
+									);
+		$("#balanceTable").handsontable("render");
+	};
+				
+	
+	$("#expenseTable").handsontable({
+		columns: [
+			
+			{data:"details" },
+			{data:"cash", type:"numeric", format:"0,0", renderer: function(instance, td, row, col, prop, value){ Handsontable.NumericRenderer.apply(this, arguments); expenseConclusion(); } },
+			
+		],
+		startRows: 1,
+		colHeaders: expenseColHeaders,
+		colWidths: expenseColWidth,
+		minSpareRows: 1,
+		contextMenu: ['row_above', 'row_below', 'remove_row'],
+		rowHeaders:true,
+		columnSorting: true,
+		data: expenseData
+	});
+
+
+	function sumExpenseCash() { expenseSumCash=expenseData.reduce( function(a,b) {return (a+Number(b.cash));},0); return expenseSumCash;}
+	function expenseConclusion() {
+		$("#expenseConclusion").html("<p>현금지출합계 : "+numberWithCommas(sumExpenseCash())+"</p>");
+		$("#balanceTable").handsontable("render");
+	}
+	
+	
+	
+	
+	balanceData = [
+		{details:"+ 이월현금", amount:0},	//0
+		{details:"+ 현금수입", amount:0},	//1
+		{details:"- 현금지출", amount:0},	//2
+		{details:"- 원장님 A 수령", amount:0},	//3
+		{details:"- 원장님 B 수령", amount:0},	//4
+		{details:"+ 왜남는거지?", amount:0},	//5
+		{details:"= 데스크 현금잔액 ", amount:0}	//6
+	];
+	
+	
+	$("#balanceTable").handsontable({
+	
+		colWidths: [200,200],
+		
+		columns: [
+			{data:"details", readOnly:true},
+			{data:"amount", type:"numeric", format:"0,0"}
+		],
+		data: balanceData,
+		cells: function (row, col, prop) {
+					var cellProperties = {};
+					if (col==1) {
+						switch (row) {
+							case 0: break;
+							case 1: balanceData[row].amount=incomeSumCashInsu+incomeSumCashNonInsu;cellProperties.readOnly=true;break;
+							case 2: balanceData[row].amount=expenseSumCash;cellProperties.readOnly=true;break;
+							case 3: break;
+							case 4: break;
+							case 5: break;
+							case 6: balanceData[6].amount = balanceData[0].amount +balanceData[1].amount -balanceData[2].amount -balanceData[3].amount -balanceData[4].amount +balanceData[5].amount;
+									 cellProperties.readOnly=true;
+						}
+					}
+				return cellProperties;
+		}
+		
+			
+	});
+	
+	$('#snatch').click(function() {
+			
+			queryDate =  $('#datepicker').datepicker("getDate");
+			//queryDate.setHours(9); // /////////////////////
+			//console.log("query date:"+queryDate);
+			$.ajax({
+				url:'/dailydatamine/'+toEightDigitString(queryDate),
+				type: 'GET',
+				//data: {
+				success: function(data) {
+					//console.log('Here I am!');
+					//console.log(data);
+					incomeData.length = 0;
+					incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
+					for(var i in data) {
+						incomeData.splice(0+i,0,data[i]);
+					};
+					//$("incomeTable").loaddata(incomeData);
+					$("incomeTable").handsontable('render');
+				}
+			});
+			
+				
+
+			
+	});
+	
+	$.datepicker.regional['ko']= {           
+		closeText:'닫기',
+		prevText:'이전달',
+		nextText:'다음달',
+		currentText:'오늘',
+		monthNames:['1월(JAN)','2월(FEB)','3월(MAR)','4월(APR)','5월(MAY)','6월(JUM)','7월(JUL)','8월(AUG)','9월(SEP)','10월(OCT)','11월(NOV)','12월(DEC)'],
+		monthNamesShort:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+		dayNames:['일','월','화','수','목','금','토'],
+		dayNamesShort:['일요일','월요일','화요일','수요일','목요일','금요일','토요일'],
+		dayNamesMin:['일','월','화','수','목','금','토'],
+		weekHeader:'Wk',
+		dateFormat:'yy-mm-dd D',
+		firstDay:0,
+		isRTL:false,
+		showMonthAfterYear:true,
+		yearSuffix:''
+	};
+	$.datepicker.setDefaults($.datepicker.regional['ko']); 
+	
+	$('#datepicker').datepicker( );
+	$('#datepicker').datepicker("setDate",new Date() );
+	
+	
+	$('#save').click(function() {
+		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));
+			$.ajax({
+				url:('/api/dailyincome/'+date8),	
+				type: 'DELETE',
+				dataType: 'json',
+				//data: date8,
+				success: function(data) {
+					for (i=0; i<incomeData.length; i++) {			
+						incomeData[i].seq=i;
+						incomeData[i].dateStr8=date8;
+						
+						$.ajax({
+							url:('/api/dailyincome/'+date8),	
+							type: 'POST',
+							dataType: 'json',
+							data: incomeData[i],					
+						});
+					}
+					
+				}
+			});
+			$.ajax({
+				url:('/api/dailyexpense/'+date8),	
+				type: 'DELETE',
+				dataType: 'json',				
+				success: function(data) {
+					for (i=0; i<expenseData.length; i++) {			
+						expenseData[i].seq=i;
+						expenseData[i].dateStr8=date8;
+						
+						$.ajax({
+							url:('/api/dailyexpense/'+date8),	
+							type: 'POST',
+							dataType: 'json',
+							data: expenseData[i],					
+						});
+					}
+					
+				}
+			});
+			
+			$.ajax({
+				url:('/api/dailycash/'+date8),	
+				type: 'POST',
+				dataType: 'json',				
+				data: { 	cashBegin : balanceData[0].amount,
+							cashIncomeTotal : balanceData[1].amount,
+							cashExpenseTotal: balanceData[2].amount,
+							cashBossTaken: balanceData[3].amount,
+							cashBossBTaken: balanceData[4].amount,
+							tip: balanceData[5].amount,
+							cashEnd : balanceData[6].amount
+						}
+				
+				
+			});
+			
+			$.ajax({
+				url:('/api/dailymemo/'+date8),	
+				type: 'POST',
+				dataType: 'json',				
+				data: { 	memo : $('#memo').val() }
+			});
+	});
+	
+	
+	
+	$('#load').click(function() {
+		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));
+			$.ajax({
+				url:('/api/dailyincome/'+date8),	
+				type: 'GET',
+				//dataType: 'json',
+			
+				success: function(data) {
+						//console.log(data);
+						incomeData.length = 0;
+						for(var i in data) {
+							incomeData.push(data[i]);
+						}
+						if (incomeData.length ==0 ) incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
+						$("#incomeTable").handsontable('render');
+					} //end of function
+				
+			});
+			$.ajax({
+				url:('/api/dailyexpense/'+date8),	
+				type: 'GET',
+				//dataType: 'json',
+			
+				success: function(data) {
+						
+						expenseData.length = 0;
+						for(var i in data) {
+							expenseData.push(data[i]);
+						}
+						if (expenseData.length ==0 ) expenseData.push({  cash:0 } );
+						$("#expenseTable").handsontable('render');
+					} //end of function
+				
+			});
+			$.ajax({
+				url:('/api/dailycash/'+date8),	
+				type: 'GET',
+				dataType: 'json',				
+				success: function(data) {
+							balanceData[0].amount = data.cashBegin;
+							balanceData[1].amount = data.cashIncomeTotal;
+							balanceData[2].amount = data.cashExpenseTotal;
+							balanceData[3].amount = data.cashBossTaken;
+							balanceData[4].amount = data.cashBossBTaken;
+							balanceData[5].amount = data.tip;
+							balanceData[6].amount = data.cashEnd;
+							//console.log(data);
+							
+							$("#balanceTable").handsontable('render');
+						}
+				
+			});
+			$.ajax({
+				url:('/api/dailymemo/'+date8),	
+				type: 'GET',
+				dataType: 'json',				
+				success: function(data) {
+							$('#memo').val( data.memo );							
+						}
+			});
+			
+			
+	});
+	
+	$('#loadCashBegin').click(function() {
+		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));
+		$.ajax({
+			url:('/api/lastcash/'+date8),	// date is today...
+			type: 'GET',
+			dataType: 'json',				
+			success: function(data) {
+						//console.log('yesterday money..:'+data);
+						balanceData[0].amount = parseInt(data.cashEnd);
+						$("#balanceTable").handsontable('render');
+						
+					}
+		});
+	});
+		
+	
+	
+	
+	
+	$( "#dialog-chartNo" ).dialog({
+      autoOpen: false,
+      height: 300,
+      width: 390,
+      modal: true,
+      //zIndex:1,
+     
+    });
+    
+    /*
+    setInterval( function() {
+		$.ajax({
+				url:'/status/',
+				type: 'GET',
+				success: function(data) {
+						//console.log(data);
+						str='';
+						str+=data.snatchServerName + (data.snatchServerConnected?(" 연결됨"):(" 끊어짐"));
+						str+="/";
+						str+=data.innerServerName + (data.innerServerConnected?(" 연결됨"):(" 끊어짐"));
+						$("#dbstatus").html('<p>'+str+'</p>');
+									
+				}
+			});
+		
+		
+	}, 3000);  //every 3 sec
+    */	
+	
+	$(document).ajaxSend( function() {
+		$.blockUI();
+
+		
+	}).ajaxComplete( function() {
+		$.unblockUI();
+		
+	});
+ 
+	
+});
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+</script>  
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+</head>
+	
+	
+<body>
+		<h1> 치과 일일결산 </h1>
+	
+		<p>날짜 : <input type="label" id="datepicker" readonly></p>
+		<button id='load'>Load</button>
+		
+		
+		<h2>  1. 수입 
+		<button id='snatch'>보험청구에서 빼오기</button>
+		
+		</h2>
+		
+		<div class="handsontable" id="incomeTable"></div>
+		<p>수입 합계 </p>
+		<div class="handsontable" id="incomeSum"></div>
+		<div id = "incomeConclusion"></div>
+		
+		<h2>2. 현금 지출 </h2>
+		
+		<div class="handsontable" id="expenseTable"></div>
+		
+		<div id="expenseConclusion"></div>
+		
+
+		<h2> 3. 현금 결산 </h2>
+		
+		<button id='loadCashBegin'>이월잔액 불러오기 </button>	  
+		<div class="handsontable" id="balanceTable"></div>
+		<h2> 4. 메모  </h2>
+		<p>오늘의 한마디 : </p>
+		<textarea id="memo" rows=3 cols=150></textarea>
+	
+		<p></p>
+		<button onClick="window.print()">Print</button>
+		<button id='save'>Save</button>
+		<div id='dbstatus'></div>
+		
+		
+	
+		
+		<div id='dialog-chartNo' title='선택하세요'>			
+			<ul id='radio-select'>				
+			</ul>
+		</div>
+		
+		<div id='dialog-modal' title='알림'>			
+			
+		</div>
+		
+		
+		
+</body>
+
+
+
+
+
+
+</html>
+<!--
+
+디자인 개선 + dialog listbox
+
+
+//1.snatch - clear first
+//2.mongodb setting... 
+
+
+
+
+save/load/snatch ok dialog
+
+
+
+4.port80  .. 
+
+5.local dns
+
+static ip
+
+6.git
+
+7.forerver /webui/ poweroff / crontab,,
+
+8.favicon
+
+autoupgrade
+
+
+conf page
+
+git,ovf...
+autoupgrade system. 
+
+file:///home/hyvaa/workspace/daa2/HTMLPage.html
+
+
+
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
