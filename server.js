@@ -65,7 +65,7 @@ app.use(app.router);
 app.get('/update', function (request, response) {
 	var exec = require('child_process').exec;
 	exec("git clone git://github.com/hyvaa/da2.git" , function(error, stdout, stderr) {
-		response.end({});
+		response.send({});
 	}); 
 	
 }); 
