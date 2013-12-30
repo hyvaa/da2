@@ -1,9 +1,10 @@
 1. Ubuntu package list to install
-node (recomment to install manually)
+node (recommend to install manually)
 freetds-common freetds-bin tdsodbc
 unixodbc unixodbc-dev
 libgmp-dev
 mongodb
+bind9
 
 2. Npm list to install
 bigint express mongojs odbc

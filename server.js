@@ -6,6 +6,8 @@
 //
 //favicon is from http://www.featurepics.com/online/Cartoon-Tooth-1994919.aspx
 // Royalty free license
+//
+//
 
 var http = require('http');
 var express = require('express');
@@ -59,6 +61,14 @@ app.use(express.static('public'));
 
 app.use(express.bodyParser());
 app.use(app.router);
+
+app.get('/update', function (request, response) {
+	var exec = require('child_process').exec;
+	exec("git clone git://github.com/hyvaa/da2.git" , function(error, stdout, stderr) {
+		response.end(data);
+	});
+	
+}); 
 
 app.get('/', function (request, response) {
 	fs.readFile('./html/index.html', function (error, data) {
