@@ -1,5 +1,5 @@
 //
-// DAA (Dental Affair Assist) 0.0.1
+// sersjk er'gklsj 'josDAA (Dental Affair Assist) 0.0.1
 // server.js for node.js
 // programming by hyvaasoft@gmail.com
 // December 2013
@@ -7,7 +7,7 @@
 //favicon is from http://www.featurepics.com/online/Cartoon-Tooth-1994919.aspx
 // Royalty free license
 //
-//
+// do it rite!!
 
 var http = require('http');
 var express = require('express');
@@ -64,7 +64,7 @@ app.use(app.router);
 
 app.get('/update', function (request, response) {
 	var exec = require('child_process').exec;
-	exec("git clone git://github.com/hyvaa/da2.git" , function(error, stdout, stderr) {
+	exec("git pull origin master" , function(error, stdout, stderr) {
 		response.send({});
 	}); 
 	
