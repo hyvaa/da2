@@ -1,0 +1,30 @@
+; Use semicolons to add comments.
+; Host-to-IP Address DNS Pointers for home.local
+; Note: The extra "." at the end of the domain names are important.
+; The following parameters set when DNS records will expire, etc.
+; Importantly, the serial number must always be iterated upward to prevent
+; undesirable consequences. A good format to use is YYYYMMDDII where
+; the II index is in case you make more that one change in the same day.
+$ORIGIN .
+$TTL 86400 ; 1 day
+dc.local. IN SOA toople.dc.local. hostmaster.dc.local. (
+ 2013122501 ; serial
+ 8H ; refresh
+ 4H ; retry
+ 4W ; expire
+ 1D ; minimum
+)
+
+; NS indicates that 'server1' is a/the nameserver on home.local
+; MX indicates that 'mail-server' is the mail server on home.local
+dc.local. IN NS toople.dc.local.
+dc.local. IN MX 10 toople.dc.local.
+
+$ORIGIN dc.local.
+
+; Set the address for localhost.dc.local
+localhost IN A 127.0.0.1
+
+; Set the hostnames in alphabetical order
+toople IN A 192.168.0.110
+

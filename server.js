@@ -342,6 +342,10 @@ function dooConnect(){
 
 function dooQuery(qstr, param) {
 	var result;
+	if (myDB.isConnected == false) {
+		dooConnect();
+	}
+	
 	try {
 		result = myDB.dooDB.querySync(qstr, param);
 	} catch (err) {
@@ -370,7 +374,7 @@ function dooGetDailyDataMine(request, response, date){
 	
 	res1 = dooQuery('select * from tb_ha020 where TREAT_DAT='+ toEightDigitString(date));
 		
-	
+	if (Object.prototype.toString.call(res1) != '[object Array]') res1=[];
 	
 	for (var i=0; i<res1.length; i++) {
 		var item = {};
@@ -517,7 +521,7 @@ function dooGetDataByName(request, response, name) {
 		item.ssn = res[i].RESI_NO;
 		item.cellphone = res[i].HP_NO;
 		item.address = res[i].HOME_ADDR;
-		item.zipcode = res[i].HOME_ZIPCD;
+		item.zipcode = res[i].HOME_ZIPCD;용
 		item.email = res[i].EMAIL;
 		item.birth8digit = res[i].BIRTH_DAT;
 		

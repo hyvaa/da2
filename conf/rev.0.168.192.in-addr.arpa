@@ -1,0 +1,14 @@
+; IP Address-to-Host DNS Pointers for the 192.168.0 subnet
+@ IN SOA toople.dc.local. hostmaster.dc.local. (
+ 2013122501 ; serial
+ 8H ; refresh
+ 4H ; retry
+ 4W ; expire
+ 1D ; minimum
+)
+; define the authoritative name server
+ IN NS toople.dc.local.
+; our hosts, in numeric order
+
+110 IN PTR toople.dc.local.
+
