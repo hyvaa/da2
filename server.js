@@ -65,8 +65,8 @@ app.use(app.router);
 app.get('/update', function (request, response) {
 	var exec = require('child_process').exec;
 	exec("git clone git://github.com/hyvaa/da2.git" , function(error, stdout, stderr) {
-		response.end(data);
-	});
+		response.end({});
+	}); 
 	
 }); 
 
@@ -95,7 +95,7 @@ app.get('/status', function (request, response) {
 app.get('/dailybook', function (request, response) {
 	fs.readFile('./html/dailybook.html', function (error, data) {
 		response.end(data);
-	})
+	}); 
 });
 
 
