@@ -1,3 +1,13 @@
+
+
+
+
+0. 
+home = /home/hyvaa
+git clone git://github.com/hyvaa/da2.git
+
+run folder = /home/hyvaa/da2
+
 1. Ubuntu package list to install
 node (recommend to install manually)
 freetds-common freetds-bin tdsodbc
@@ -6,11 +16,11 @@ libgmp-dev
 mongodb
 bind9
 
-2. Npm list to install
-bigint express mongojs odbc
+2. Npm list to install 
+bigint express mongojs odbc - locally
+forever - globally
 
-3. Howto install da2-toople
-git clone git://github.com/hyvaa/da2.git
+
 
 4.Path configuration files
 ( Assume that 
