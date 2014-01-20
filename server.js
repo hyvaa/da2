@@ -1,8 +1,8 @@
 //
-// DAA (Dental Affair Assist) 0.0.1
+// DAA (Dental Affair Assist) 0.0.2
 // server.js for node.js
 // programming by hyvaasoft@gmail.com
-// December 2013
+// January 2014
 //
 //favicon is from http://www.featurepics.com/online/Cartoon-Tooth-1994919.aspx
 // Royalty free license
@@ -265,6 +265,8 @@ app.get('/api/lastcash/:date', function (request, response) {
 	
 	
 });
+
+
 	
 	
 	
@@ -290,13 +292,17 @@ app.get('/datamine/chart/:chartno', function (request, response) {
 	myDB.getDataByChartNo(request, response, chartNo);
 });
 
-
-
-
-
-
-
-
+app.get('/api/raw/app/:date', function (request, response) {  //get pt that have appointment that day
+	var dateStr8 = request.param('date');	
+	var d = toDate(dateStr8);
+	
+	
+	//console.log( dateStr8+':'+t1+'/'+t2);
+	
+	
+	response.send(dooGetApp(d));
+	
+});
 
 
 http.createServer(app).listen(52273, function () {
@@ -334,6 +340,59 @@ function ageGender(now, birth8digit, ssn) {
 	return '' + Math.floor(interval/ (1000*60*60*24*365)) + gender;
 }
 
+function tooth2str(tn, toAdd) { //tooth number(byte) to string; 
+	var res ='';
+	var bit = [];
+	var i,j,count;
+	
+	
+	bit[0] = tn & 0x01;
+	bit[1] = tn & 0x02;
+	bit[2] = tn & 0x04;
+	bit[3] = tn & 0x08;
+	bit[4] = tn & 0x10;
+	bit[5] = tn & 0x20;
+	bit[6] = tn & 0x40;
+	bit[7] = tn & 0x80;
+	
+	for (i=0; i<8; i++)  {
+		count=0;
+		for (j=i+1; j<8; j++) {
+			count += ((bit[j])?1:0);
+		}
+		if (bit[i]) {
+			res += (toAdd+i+1);
+			res += (count)?',':'';
+		}
+	}
+	
+	return res;
+}
+
+function addComma2(str1, str2) {
+	
+	if (str1=='') {
+		if (str2=='') return '';
+		else return str2;
+	} else {
+		if (str2=='') return str1;
+		else return (str1+','+str2);
+	}
+}
+
+function addComma8(s1,s2,s3,s4,s5,s6,s7,s8) {
+	var res;
+	
+	res = addComma2(s1,s2);
+	res = addComma2(res,s3);
+	res = addComma2(res,s4);
+	res = addComma2(res,s5);
+	res = addComma2(res,s6);
+	res = addComma2(res,s7);
+	res = addComma2(res,s8);
+	
+	return res;
+}	
 
 /////////////////////////////////////////////////////////////////////////
 //DOO SERIES
@@ -367,6 +426,49 @@ function dooQuery(qstr, param) {
 function dooClose() {
 }
 	
+	
+function dooGetApp(date) {
+	var res1;
+	var res=[];
+	
+	
+	
+	var dayBegin = date.getTime()/1000;
+	var dayEnd = dayBegin + 60*60*24;
+	
+	
+	
+	
+	res1 = dooQuery('select * from tb_ha040 where BTIME BETWEEN '+dayBegin+' AND '+dayEnd);
+	
+	for (var i=0; i<res1.length; i++) {
+		var item={};
+		var time;
+		item.chartNo = res1[i].PNT_ID;
+		time = new Date(res1[i].BTIME*1000);
+		
+		/*
+		var hh,mm,ss;
+		hh=('0'+time.getHours()).slice(-2);
+		mm=('0'+time.getMinutes()).slice(-2);
+		ss=('0'+time.getSeconds()).slice(-2);
+		
+		item.dateTime = toEightDigitString(time)+ hh+mm+ss;
+		*/
+		item.dateTime = time;
+		
+		item.tx = res1[i].CONTENT;
+		
+		
+		
+		//console.log(item);
+		res.push(item);
+	}
+	return res;
+}
+	
+	
+
 
 function dooGetDailyDataMine(request, response, date){
 	
@@ -461,6 +563,7 @@ function dooGetDailyDataMine(request, response, date){
 		
 		tooth10=tooth20=tooth30=tooth40=0;
 		tooth50=tooth60=tooth70=tooth80=0;
+		full=false;
 		
 		var toothP= new bigint(0);
 		var toothD= new bigint(0);
@@ -484,13 +587,36 @@ function dooGetDailyDataMine(request, response, date){
 			tooth6= v.and(255); v=v.shiftRight(8);
 			tooth7= v.and(255); v=v.shiftRight(8);
 			tooth8= v.and(255); 
+			
+			
+			// if full, set flag
+			if (	((tooth1==0xff)||(tooth1==0x7f)) &&
+					((tooth2==0xff)||(tooth2==0x7f)) &&
+					((tooth3==0xff)||(tooth3==0x7f)) &&
+					((tooth4==0xff)||(tooth4==0x7f)) ) full= true;
+					
+			if (	(tooth5==0x1f) &&
+					(tooth6==0x1f) &&
+					(tooth7==0x1f) &&
+					(tooth8==0x1f) ) full= true;
+					
+			// all means nothing
+			tooth1= ((tooth1==0xff)||(tooth1==0x7f))?0:tooth1;
+			tooth2= ((tooth2==0xff)||(tooth2==0x7f))?0:tooth2;
+			tooth3= ((tooth3==0xff)||(tooth3==0x7f))?0:tooth3;
+			tooth4= ((tooth4==0xff)||(tooth4==0x7f))?0:tooth4;
+			tooth5= (tooth5==0x1f)?0:tooth5;
+			tooth6= (tooth6==0x1f)?0:tooth6;
+			tooth7= (tooth7==0x1f)?0:tooth7;
+			tooth8= (tooth8==0x1f)?0:tooth8;
+			
 	
 			tooth10 |=  tooth1; 	tooth20 |=  tooth2;	tooth30 |=  tooth3;	tooth40 |=  tooth4;
 			tooth50 |=  tooth5; 	tooth60 |=  tooth6;	tooth70 |=  tooth7;	tooth80 |=  tooth8;
 			
 		}
 		
-		
+		/*
 		item.toothNo=tooth10.toString(16)+"/"
 					+tooth20.toString(16)+"/"
 					+tooth30.toString(16)+"/"
@@ -499,6 +625,20 @@ function dooGetDailyDataMine(request, response, date){
 					+tooth60.toString(16)+"/"
 					+tooth70.toString(16)+"/"
 					+tooth80.toString(16);
+		
+		*/
+		item.toothNo = addComma2( ((full)?('전악'):'') ,	addComma8(	tooth2str(tooth10,10),
+										tooth2str(tooth20,20),
+										tooth2str(tooth30,30),
+										tooth2str(tooth40,40),
+										tooth2str(tooth50,50),
+										tooth2str(tooth60,60),
+										tooth2str(tooth70,70),
+										tooth2str(tooth80,80)));
+					
+		
+		
+		
 		item.toothNoPermanent= toothP.toNumber();
 		item.toothNoDeciduous= toothD.toNumber();
 			
@@ -506,9 +646,54 @@ function dooGetDailyDataMine(request, response, date){
 		
 		res.push(item);
 	}
+	
+	
+	
+	
+	// ha040 for more .. appointment .
+	var res2 = dooGetApp(date); //appointment list
+	if (Object.prototype.toString.call(res2) != '[object Array]') res2=[];
+	
+	// now check unpaid list.. 결제정보 있는사람은 약속리스트에서 제거 
+	for (var i in res2) {
+		res2[i].toDelete = false;
+		for (var j in res) {
 			
-	// ha010 for more .. new patient..
-	// ha040 for more .. appointment ..
+			if (res2[i].chartNo == res[j].chartNo) {
+				res2[i].toDelete = true;
+				
+				//console.log('out:'+i+':'+j);
+			}
+		}			
+	}
+	//var c=0;
+	//console.log(res2);
+	for (var j in res2) {
+		if  (res2[j].toDelete==true) {}
+		else {
+			//c++;
+		 var item={};
+		 item.chartNo = res2[j].chartNo;
+		 if (item.chartNo.slice(0,4)=='temp') continue;
+		 item.tx = res2[j].tx;
+		 item.dateTime = res2[j].dateTime;
+		 item.cashInsu = item.cashNonInsu = item.cardInsu = item.cardNonInsu = item.transfer=0;
+		 item.toothNo = '-';
+		 //item.name = ... ageGender//////////////////////////////////////////////
+		 var nameRes = dooQuery("select * from tb_hp010 where PNT_ID='"+item.chartNo+"'");
+		 if (nameRes.length!=0) {
+			item.name = nameRes[0].PNT_NAME;
+			item.ageGender = ageGender(now, nameRes[0].BIRTH_DAT, nameRes[0].RESI_NO);
+		}
+		 //console.log(item);
+		 res.push(item);
+		}
+	}
+	
+	//console.log(res2.length+'appointment/'+c+' missed appointments');
+			
+	// ha010 for more .. new patient.. SKIP
+	
 	
 	res.sort( function(a,b){ return (a.dateTime.getTime() - b.dateTime.getTime());} );
 	//console.log(res);
@@ -531,7 +716,7 @@ function dooGetDataByName(request, response, name) {
 		item.ssn = res[i].RESI_NO;
 		item.cellphone = res[i].HP_NO;
 		item.address = res[i].HOME_ADDR;
-		item.zipcode = res[i].HOME_ZIPCD;용
+		item.zipcode = res[i].HOME_ZIPCD;
 		item.email = res[i].EMAIL;
 		item.birth8digit = res[i].BIRTH_DAT;
 		

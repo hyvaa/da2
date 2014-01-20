@@ -11,25 +11,18 @@
 <script src="numeral.de-de.js"></script>
 <script src="jquery.blockUI.js"></script>
 
-<link rel="stylesheet" media="screen" href="jquery.handsontable.full.css">
-<link rel="stylesheet" href="jquery-ui.css">
 
+
+<link rel="stylesheet" href="jquery-ui.css">
+<link rel="stylesheet" media="screen" href="jquery.handsontable.full.css">
+<link rel="stylesheet" media="print" href="jquery.handsontable.full.print.css">
 	
 <style type="text/css"> 
-body {
-    background: white;
-    margin: 30px;
-}
-h2 {
-    margin: 20px 0;
-}
-.handsontable .currentRow {
-  background-color: #E7E8EF;
-}
 
-.handsontable .currentCol {
-  background-color: #F9F9FB;
-}
+
+
+
+
 
 </style>
 
@@ -120,8 +113,9 @@ $(document).ready(function () {
 		colWidths: incomeColWidth,
 		columnSorting: true,
 		rowHeaders: true,
-		
+		stretchH: 'none',
 		contextMenu: ['row_above', 'row_below', 'remove_row'],
+		
 		
 		minSpareRows:1,
 		
@@ -214,6 +208,7 @@ $(document).ready(function () {
 		],		
 		startRows: 1,
 		startCols: 13,		
+		stretchH: 'none',
 		//rowHeaders:true,
 		data: incomeSumData
 	});
@@ -225,10 +220,10 @@ $(document).ready(function () {
 	
 	function incomeConclusion() {
 		$("#incomeConclusion").html("<p>현금수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCashNonInsu)
-										+"</p><p>카드수입합계 : "+numberWithCommas(incomeSumCardInsu+incomeSumCardNonInsu)
-										+"</p><p>보험수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCardInsu)
-										+"</p><p>비보험수입합계 : "+numberWithCommas(incomeSumCashNonInsu+incomeSumCardNonInsu)
-										+"</p><p>총수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCashNonInsu+incomeSumCardInsu+incomeSumCardNonInsu)
+										+"/  카드수입합계 : "+numberWithCommas(incomeSumCardInsu+incomeSumCardNonInsu)
+										+"/  보험수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCardInsu)
+										+"/  비보험수입합계 : "+numberWithCommas(incomeSumCashNonInsu+incomeSumCardNonInsu)
+										+"/  총수입합계 : "+numberWithCommas(incomeSumCashInsu+incomeSumCashNonInsu+incomeSumCardInsu+incomeSumCardNonInsu)
 										+"</p>"
 									);
 		$("#balanceTable").handsontable("render");
@@ -314,7 +309,8 @@ $(document).ready(function () {
 				success: function(data) {
 					//console.log('Here I am!');
 					//console.log(data);
-					incomeData.length = 0;
+					//incomeData.length = 0;
+					incomeData.splice(0,incomeData.length);
 					incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
 					for(var i in data) {
 						incomeData.splice(0+i,0,data[i]);
@@ -429,7 +425,8 @@ $(document).ready(function () {
 			
 				success: function(data) {
 						//console.log(data);
-						incomeData.length = 0;
+						//incomeData.length = 0;
+						incomeData.splice(0,incomeData.length);
 						for(var i in data) {
 							incomeData.push(data[i]);
 						}
@@ -445,7 +442,8 @@ $(document).ready(function () {
 			
 				success: function(data) {
 						
-						expenseData.length = 0;
+						//expenseData.length = 0;
+						expenseData.splice(0,expenseData.length);
 						for(var i in data) {
 							expenseData.push(data[i]);
 						}
@@ -571,22 +569,23 @@ $(document).ready(function () {
 		
 		</h2>
 		
-		<div class="handsontable" id="incomeTable"></div>
+		<div class="handsontable" id="incomeTable" ></div>
 		<p>수입 합계 </p>
-		<div class="handsontable" id="incomeSum"></div>
+		<div class="handsontable" id="incomeSum" ></div>
 		<div id = "incomeConclusion"></div>
+		
 		
 		<h2>2. 현금 지출 </h2>
 		
-		<div class="handsontable" id="expenseTable"></div>
+		<div class="handsontable" id="expenseTable" ></div>
 		
 		<div id="expenseConclusion"></div>
 		
-
 		<h2> 3. 현금 결산 </h2>
 		
 		<button id='loadCashBegin'>이월잔액 불러오기 </button>	  
-		<div class="handsontable" id="balanceTable"></div>
+		<div class="handsontable" id="balanceTable" ></div>
+		
 		<h2> 4. 메모  </h2>
 		<p>오늘의 한마디 : </p>
 		<textarea id="memo" rows=3 cols=150></textarea>

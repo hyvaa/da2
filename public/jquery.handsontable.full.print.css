@@ -9,34 +9,55 @@
  * Date: Wed Nov 27 2013 14:18:10 GMT+0100 (CET)
  */
  
- 
-/* some edited by hyvaasoft@gmail.com
+ /* some edited by hyvaasoft@gmail.com
  */
+
+@page{
+margin-left: 0px;
+margin-right: 0px;
+margin-top: 0px;
+margin-bottom: 0px;
+}
+
+html {
+  margin:1px;
+  
+  
+}
 
 p {
 font-size: 90%;
 	
 }
-
-
-@media only screen and (device-width: 768px) {
-  /* For general iPad layouts */
 body {
- margin:50px;   
-  
+  -ms-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+	transform-origin: 0 0;
+
+
+
+    zoom: 0.8; /* Old IE only */
+    -moz-transform: scale(0.8);
+    -webkit-transform: scale(0.8);
+        transform: scale(0.8);
     
-}  
-  
-  
+    -ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.8, M12=0, M21=0, M22=0.8, SizingMethod='auto expand')";
+    
+	
+    
+    
 }
 
 
-body {
-  margin: 80px;
-}
 
 .handsontable {
   position: relative;
+  
+  
+    margin:0px;
+   
+	
   
 }
 
