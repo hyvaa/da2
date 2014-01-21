@@ -65,6 +65,7 @@ app.use(app.router);
 app.get('/update', function (request, response) {
 	var exec = require('child_process').exec;
 	exec("git pull origin master && git fetch origin && git reset --hard origin/master" , function(error, stdout, stderr) {
+		console.log("== DA2 Toople Server Updated ==");
 		response.send(' <h2> 업데이트 명령이 실행되었습니다. 인터넷을 통해 자동으로 업데이트 됩니다.</h2><h2>다음 명령어를 치면 수동으로 업데이트를 실행합니다. </h2><h2>"sudo git pull origin master && git fetch origin && git reset --hard origin/master "</h2><h2>잠시후 Reload 해주세요. </h2>');
 	}); 
 	
