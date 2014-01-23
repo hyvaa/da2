@@ -21,18 +21,28 @@ font-size: 90%;
 
 @media only screen and (device-width: 768px) {
   /* For general iPad layouts */
-body {
- margin:50px;   
-  
-    
-}  
+
   
   
 }
+#part2 {
+		width:450px;
+		float:left;
+		
+		
+	}
+	#part3 {
+		width:500px;
+		float:left;
+	}
+	#wrap {
+		overflow:hidden;
+	}
 
 
 body {
   margin: 80px;
+ 
 }
 
 .handsontable {

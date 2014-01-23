@@ -270,7 +270,7 @@ $(document).ready(function () {
 	
 	$("#balanceTable").handsontable({
 	
-		colWidths: [200,200],
+		colWidths: [200,100],
 		
 		columns: [
 			{data:"details", readOnly:true},
@@ -546,24 +546,31 @@ $(document).ready(function () {
 
 
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 </script>  
 
+<style>
+	
+
+
+</style>
 
 	
 </head>
 	
 	
 <body>
+	<div id="title">
 		<h1> 치과 일일결산 </h1>
-	
-		<p>날짜 : <input type="label" id="datepicker" readonly></p>
+	</div>
+	<div id="date">
+		<p>날짜 : <input type="label" id="datepicker" readonly>
 		<button id='load'>Load</button>
+		</p>
 		
-		
+	</div>
+	<div id="part1">
 		<h2>  1. 수입 
 		<button id='snatch'>보험청구에서 빼오기</button>
 		
@@ -573,19 +580,28 @@ $(document).ready(function () {
 		<p>수입 합계 </p>
 		<div class="handsontable" id="incomeSum" ></div>
 		<div id = "incomeConclusion"></div>
-		
+	</div>
+	<div id="wrap">
+	<div id="part2">
 		
 		<h2>2. 현금 지출 </h2>
 		
-		<div class="handsontable" id="expenseTable" ></div>
-		
+		<div class="handsontable" id="expenseTable" >  </div>
+		<p></p>
 		<div id="expenseConclusion"></div>
+	</div>
+	<div id="part3">
 		
-		<h2> 3. 현금 결산 </h2>
+		<h2> 3. 현금 결산
 		
 		<button id='loadCashBegin'>이월잔액 불러오기 </button>	  
+		 </h2>
 		<div class="handsontable" id="balanceTable" ></div>
+		<p></p>
 		
+	</div>
+	</div>
+	<div id="part4">
 		<h2> 4. 메모  </h2>
 		<p>오늘의 한마디 : </p>
 		<textarea id="memo" rows=3 cols=150></textarea>
@@ -593,6 +609,10 @@ $(document).ready(function () {
 		<p></p>
 		<button onClick="window.print()">Print</button>
 		<button id='save'>Save</button>
+	</div>
+	
+	
+		
 		<div id='dbstatus'></div>
 		
 		
