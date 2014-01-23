@@ -25,6 +25,13 @@ font-size: 90%;
   
   
 }
+
+#part1 {
+	
+		width: 1200px;
+	
+	
+	}
 #part2 {
 		width:400px;
 		float:left;
@@ -41,6 +48,7 @@ font-size: 90%;
 	}
 	#wrap {
 		overflow:hidden;
+		width: 1200px;
 	}
 
 

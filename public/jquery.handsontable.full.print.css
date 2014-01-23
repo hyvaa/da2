@@ -16,7 +16,7 @@
 
 	#part1 {
 	
-	
+		width: 1200px;
 	
 	
 	}
@@ -39,6 +39,7 @@
 	}
 	#wrap {
 		overflow:hidden;
+		width: 1200px;
 	}
 
 	#title {
