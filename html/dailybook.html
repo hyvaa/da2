@@ -50,7 +50,7 @@ var incomeSumCardNonInsu=0;
 var expenseSumCash=0;
 
 var expenseColHeaders = [   "지출내역", "액수"];
-var expenseColWidth = [        280,       70];
+var expenseColWidth = [        100,       100];
 var expenseData = [
 	{ no:1, cash:0 }
 ];
@@ -600,17 +600,17 @@ $(document).ready(function () {
 		<p></p>
 		
 	</div>
-	</div>
+	
 	<div id="part4">
 		<h2> 4. 메모  </h2>
 		<p>오늘의 한마디 : </p>
-		<textarea id="memo" rows=3 cols=150></textarea>
+		<textarea id="memo" rows=5 cols=30></textarea>
 	
 		<p></p>
 		<button onClick="window.print()">Print</button>
 		<button id='save'>Save</button>
 	</div>
-	
+	</div>
 	
 		
 		<div id='dbstatus'></div>

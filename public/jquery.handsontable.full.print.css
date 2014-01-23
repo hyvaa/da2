@@ -12,39 +12,42 @@
  /* some edited by hyvaasoft@gmail.com
  */
 
+@page { size: A3 }
 
 	#part1 {
 	
-	padding:10px;
+	
 	
 	
 	}
 
 
 
-	#part2 {
-		width:450px;
+#part2 {
+		width:300px;
 		float:left;
 		
-		margin-bottom:20px;
-	
+		
 	}
 	#part3 {
-		width:320px;
-		float:right;
-		margin-bottom:20px;
-		
+		width:350px;
+		float:left;
+	}
+	#part4 {
+		width:100px;
+		float:left;
 	}
 	#wrap {
-		overflow: hidden;
-		
-		
+		overflow:hidden;
 	}
+
 	#title {
 		display:none;
 	}
 
-
+button {
+	display:none;
+}
 
 html {
   margin:1px;
@@ -66,9 +69,9 @@ body {
 
 
     zoom: 0.8; /* Old IE only */
-    -moz-transform: scale(0.7);
-    -webkit-transform: scale(0.7);
-        transform: scale(0.7);
+    -moz-transform: scale(1);
+    -webkit-transform: scale(1);
+        transform: scale(1);
     
     -ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.7, M12=0, M21=0, M22=0.7, SizingMethod='auto expand')";
   
