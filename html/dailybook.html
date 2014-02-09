@@ -455,16 +455,19 @@ $(document).ready(function () {
 			$.ajax({
 				url:('/api/dailycash/'+date8),	
 				type: 'GET',
-				dataType: 'json',				
+				//dataType: 'json',				
 				success: function(data) {
-							balanceData[0].amount = data.cashBegin;
-							balanceData[1].amount = data.cashIncomeTotal;
-							balanceData[2].amount = data.cashExpenseTotal;
-							balanceData[3].amount = data.cashBossTaken;
-							balanceData[4].amount = data.cashBossBTaken;
-							balanceData[5].amount = data.tip;
-							balanceData[6].amount = data.cashEnd;
-							//console.log(data);
+								
+							
+								balanceData[0].amount = data?data.cashBegin:0;
+								balanceData[1].amount = data?data.cashIncomeTotal:0;
+								balanceData[2].amount = data?data.cashExpenseTotal:0;
+								balanceData[3].amount = data?data.cashBossTaken:0;
+								balanceData[4].amount = data?data.cashBossBTaken:0;
+								balanceData[5].amount = data?data.tip:0;
+								balanceData[6].amount = data?data.cashEnd:0;
+								
+														
 							
 							$("#balanceTable").handsontable('render');
 						}

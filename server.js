@@ -193,6 +193,7 @@ app.get('/api/dailycash/:date', function (request, response) {
 	var date=request.param('date');
 	mDB.db.dailyCash.findOne({'dateStr8':date}, function (err,docs) {
 		//console.log(docs);
+		
 		response.send(docs);
 	});
 });
@@ -253,7 +254,7 @@ app.get('/api/lastcash/:date', function (request, response) {
 	var item = null;
 	
 	
-	mDB.db.dailyCash.find ({'dateStr8':  { $lt: date8}}).limit(1).sort({'dateStr8':-1} , function (err,docs) {
+	mDB.db.dailyCash.find ({'dateStr8':  { $lt: date8}}).sort({'dateStr8':-1} , function (err,docs) {
 		//console.log(docs);
 		//console.log(docs[0]);
 		//console.log('er:'+err);
