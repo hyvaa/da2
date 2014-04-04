@@ -1,13 +1,23 @@
 //
-// DAA (Dental Affair Assist) 0.0.2
+// DAA (Dental Affair Assist) 0.1.0
 // server.js for node.js
 // programming by hyvaasoft@gmail.com
-// January 2014
+// March 2014
 //
 //favicon is from http://www.featurepics.com/online/Cartoon-Tooth-1994919.aspx
 // Royalty free license
 //
 // 
+
+
+// todo list
+//
+
+// snatch 날짜 보여주기
+// save하고 ok modal 보여주기.
+// render 속도 개선
+
+
 
 var http = require('http');
 var express = require('express');
@@ -256,7 +266,7 @@ app.get('/api/lastcash/:date', function (request, response) {
 	
 	mDB.db.dailyCash.find ({'dateStr8':  { $lt: date8}}).sort({'dateStr8':-1} , function (err,docs) {
 		//console.log(docs);
-		//console.log(docs[0]);
+		console.log(docs[0]);
 		//console.log('er:'+err);
 		
 		
@@ -402,7 +412,7 @@ function addComma8(s1,s2,s3,s4,s5,s6,s7,s8) {
 function dooConnect(){
 
 	myDB.dooDB = require('odbc')();
-	var cn ="DRIVER={FreeTDS};SERVERNAME=TS;UID=sa;PWD=osstem;DATABASE=H2";
+	var cn ="DRIVER={FreeTDS};SERVERNAME=TS;UID=sa;PWD=osstem;DATABASE=Hanaro";
 
 	myDB.dooDB.open(cn, function (err) {
 		if (err) { myDB.isConnected=false; return console.log(err);};
@@ -441,7 +451,7 @@ function dooGetApp(date) {
 	
 	
 	
-	res1 = dooQuery('select * from tb_ha040 where BTIME BETWEEN '+dayBegin+' AND '+dayEnd);
+	res1 = dooQuery('select * from tb_reservation where BTIME BETWEEN '+dayBegin+' AND '+dayEnd);
 	
 	for (var i=0; i<res1.length; i++) {
 		var item={};
@@ -486,28 +496,29 @@ function dooGetDailyDataMine(request, response, date){
 	};
 	
 	
-	res1 = dooQuery('select * from tb_ha020 where TREAT_DAT='+ toEightDigitString(date));
+	res1 = dooQuery('select * from tb_account_book where TREATment_DATe='+ toEightDigitString(date));
+	console.log(res1);
 		
 	if (Object.prototype.toString.call(res1) != '[object Array]') res1=[];
 	
 	for (var i=0; i<res1.length; i++) {
 		var item = {};
 		
-		dts = res1[i].PAY_DATETIME;
+		dts = res1[i].ACCOUNT_BOOK_DATE;
 		dateTime = new Date(  parseInt(dts.substr(0,4)), parseInt(dts.substr(4,2))-1, parseInt(dts.substr(6,2)),     //month numbering is zero-based
 								parseInt(dts.substr(8,2)), parseInt(dts.substr(10,2)),parseInt(dts.substr(12,2)),
 								0
 							);
 		item.dateTime = dateTime;
+		console.log(dateTime);
 		
 		
 		
-		
-		item.chartNo = res1[i].PNT_ID;
+		item.chartNo = res1[i].PATIENT_ID;
 		
 		item.tx = res1[i].TX_NAME;
 		
-		ptRecord = myDB.dooDB.querySync("select * from tb_hp010 where PNT_ID='"+item.chartNo+"'")[0];
+		ptRecord = myDB.dooDB.querySync("select * from tb_patient_info where PNT_ID='"+item.chartNo+"'")[0];
 		
 		item.name = ptRecord.PNT_NAME;
 		item.ageGender = ageGender(now, ptRecord.BIRTH_DAT, ptRecord.RESI_NO);
@@ -518,21 +529,28 @@ function dooGetDailyDataMine(request, response, date){
 		// cash...calc//////////////////////////////////////////////////
 		card=cash=insu=nonInsu=0;				
 				
-		card = parseInt(res1[i].CARD); if  (isNaN(card)) card=0;
+	/*	card = parseInt(res1[i].CARD); if  (isNaN(card)) card=0;
 		cash = parseInt(res1[i].CASH); if (isNaN(cash)) cash=0;
 		niof = parseInt(res1[i].NON_INSURANCE_OTHER_FEE); if (isNaN(niof)) niof=0;
 		insucost = parseInt(res1[i].PNT_INSURCOST); if (isNaN(insucost)) insucost=0;
 		noncost= parseInt(res1[i].PNT_NONCOST); if (isNaN(noncost)) noncost=0;		
 		nonInsu = parseInt(res1[i].PNT_NONCOST); if (isNaN(nonInsu)) nonInsu=0;
 		insu = insucost - noncost - niof;
+		*/
 		
-		//NOW guess balace card and cash...
-		// card+cash == insu + noninsu
-		if ((card+cash)<(insu+nonInsu)) {
-			omit = insu+nonInsu - card-cash;
-			if (card===0) cash+=omit; else card+=omit
-			//console.log('item:'+i+'//omit'+omit);
-		}
+		insu = res1[i].INSURANCE_FEE;
+		nonInsu = res1[i].NON_INSURANCE_FEE;
+
+/*		card_query = "select * from tb_account_book_card_info where ACCOUNT_BOOK_DATE='"+dts+"'";		// and PNT_ID='"+item.chartNo+"'";
+		card_res = myDB.dooDB.querySync(card_query);
+		console.log(card_query);
+		console.log(card_res);
+		
+		card = (card==isNaN)? 0 : parseInt(card);
+		cash = insu+nonInsu-card;
+		
+		
+		
 		//NOw balance into 4 values...
 		cashInsu=cashNonInsu=cardInsu=cardNonInsu=0;
 		if (cash===0) { //all card
@@ -549,11 +567,16 @@ function dooGetDailyDataMine(request, response, date){
 					else if (insu <cash) { cashInsu=insu; cashNonInsu=nonInsu-insu; cardNonInsu=card-insu;}
 				}
 		};	
+	*/
+	
+			
 		
-		item.cashInsu = cashInsu;
-		item.cashNonInsu = cashNonInsu;
-		item.cardInsu = cardInsu;
-		item.cardNonInsu = cardNonInsu;
+		
+		
+		item.cashInsu = 0;
+		item.cashNonInsu = 0;
+		item.cardInsu = insu;
+		item.cardNonInsu = nonInsu;
 				
 		item.transfer=0;
 		//item.transferChecked=false;
@@ -561,7 +584,7 @@ function dooGetDailyDataMine(request, response, date){
 		
 		///////////////////////////////////////////////////////////////////////////////// 
 		
-		tooth = myDB.dooDB.querySync("select TOOTH from tb_ht020 where PNT_ID='"+item.chartNo+"'"+ " and TREAT_DAT="+ toEightDigitString(date));
+		tooth = myDB.dooDB.querySync("select TOOTH from tb_remedy where PNT_ID='"+item.chartNo+"'"+ " and TREATment_DATe="+ toEightDigitString(date));
 		
 		tooth10=tooth20=tooth30=tooth40=0;
 		tooth50=tooth60=tooth70=tooth80=0;
@@ -682,7 +705,7 @@ function dooGetDailyDataMine(request, response, date){
 		 item.cashInsu = item.cashNonInsu = item.cardInsu = item.cardNonInsu = item.transfer=0;
 		 item.toothNo = '-';
 		 //item.name = ... ageGender//////////////////////////////////////////////
-		 var nameRes = dooQuery("select * from tb_hp010 where PNT_ID='"+item.chartNo+"'");
+		 var nameRes = dooQuery("select * from tb_patient_info where PNT_ID='"+item.chartNo+"'");
 		 if (nameRes.length!=0) {
 			item.name = nameRes[0].PNT_NAME;
 			item.ageGender = ageGender(now, nameRes[0].BIRTH_DAT, nameRes[0].RESI_NO);
@@ -708,7 +731,7 @@ function dooGetDailyDataMine(request, response, date){
 
 function dooGetDataByName(request, response, name) {
 	
-	var res = dooQuery("select * from tb_hp010 where PNT_NAME= ?",[name]);
+	var res = dooQuery("select * from tb_patient_info where PNT_NAME= ?",[name]);
 	
 	var ret=[];
 	for (i=0; i<res.length; i++) {
@@ -731,7 +754,7 @@ function dooGetDataByName(request, response, name) {
 
 function dooGetDataByChartNo(request, response, chartNo) {
 	
-	var res = dooQuery("select * from tb_hp010 where PNT_ID='"+chartNo+"'");
+	var res = dooQuery("select * from tb_patient_info where PNT_ID='"+chartNo+"'");
 	
 	var ret=[];
 	for (i=0; i<res.length; i++) {
