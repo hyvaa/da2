@@ -30,6 +30,14 @@
 <script> 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// todo list
+//
+
+// snatch 날짜 보여주기
+// save하고 ok modal 보여주기.!!
+// render 속도 개선
+// favicon 변경 
+// sort load/save check
 
 var today;
 
@@ -101,7 +109,9 @@ $(document).ready(function () {
 			{data:"ageGender"},
 			{data:"toothNo"},
 			{data:"tx"},
-			{data:"cashInsu", type:'numeric',format:'0,0' , renderer: function(instance, td, row, col, prop, value){ $("#incomeSum").handsontable('render');Handsontable.NumericRenderer.apply(this, arguments);}},
+			{data:"cashInsu", type:'numeric',format:'0,0' 
+			//, renderer: function(instance, td, row, col, prop, value){ $("#incomeSum").handsontable('render');Handsontable.NumericRenderer.apply(this, arguments);}
+			},
 			{data:"cashNonInsu", type:'numeric',format:'0,0'},
 			{data:"cardInsu", type:'numeric',format:'0,0'},
 			{data:"cardNonInsu", type:'numeric',format:'0,0'},		
@@ -127,21 +137,34 @@ $(document).ready(function () {
 		var id = event[0][1];
 		var content = event[0][3];
 		
-		if (id == 'chartNo') {
-			
+		var toPass = false;
+		
+		if ((id == 'chartNo')&& (!toPass)) {
+			//$('#incomeTable').handsontable('setDataAtRowProp', row, 'chartNo', content);
 			$.ajax({
 				url:'/datamine/chart/'+content,
 				type: 'GET',
 				success: function(data) {
+					toPass = true;
 					if (data.length==0) {			// invalid chart number 
-						incomeData[row].name = '-';
+						//incomeData[row].name = '-';						
+						$('#incomeTable').handsontable('setDataAtRowProp', row, 'name', '=');
+						$('#incomeTable').handsontable('setDataAtRowProp', row, 'ageGender', '=');
 					} else {
-						incomeData[row].name = data[0].name;
-						incomeData[row].ageGender = ageGender(new Date(), data[0].birth8digit, data[0].ssn);
-						
-					}				
-					$("#incomeTable").handsontable('render');
+						//incomeData[row].name = data[0].name;
+						//incomeData[row].ageGender = ageGender(new Date(), data[0].birth8digit, data[0].ssn);
+						$('#incomeTable').handsontable('setDataAtRowProp', row, 'name', data[0].name);
+						$('#incomeTable').handsontable('setDataAtRowProp', row, 'ageGender', ageGender(new Date(), data[0].birth8digit, data[0].ssn));
+					}								
+								
+					//$("#incomeTable").handsontable('render');
+				},
+				complete: function() {
+					toPass = false;
+					
 				}
+					
+				
 			});
 		} else if ( id == 'name') {
 			$.ajax({
@@ -152,7 +175,7 @@ $(document).ready(function () {
 					
 					if (data.length==0) {
 						// invalid name // 
-						incomeData[row].chartNo = '';
+						incomeData[row].chartNo = '=';
 						$("#incomeTable").handsontable('render');
 					} else if (data.length==1) {
 						incomeData[row].chartNo = data[0].chartNo;
@@ -188,6 +211,12 @@ $(document).ready(function () {
 				}
 			
 			});
+			
+		} else if ( id == 'cashNonInsu' || id=='cashInsu' || id=='cardInsu' || id=='cardNonInsu' || id=='transfer') 
+		{ 
+			$("#incomeSum").handsontable('render');
+			
+			
 			
 		}; 
 	});
@@ -299,6 +328,8 @@ $(document).ready(function () {
 	
 	$('#snatch').click(function() {
 			
+			$.blockUI();
+			
 			queryDate =  $('#datepicker').datepicker("getDate");
 			//queryDate.setHours(9); // /////////////////////
 			//console.log("query date:"+queryDate);
@@ -310,14 +341,16 @@ $(document).ready(function () {
 					//console.log('Here I am!');
 					//console.log(data);
 					//incomeData.length = 0;
-					incomeData.splice(0,incomeData.length);
+					incomeData.splice(0,incomeData.length+1);
+					console.log(data);
 					incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
 					for(var i in data) {
 						incomeData.splice(0+i,0,data[i]);
 					};
 					//$("incomeTable").loaddata(incomeData);
-					$("incomeTable").handsontable('render');
-				}
+					$("incomeTable").handsontable('render');				
+				},
+				complete: function() { $.unblockUI(); console.log(incomeData.length+' records found'); console.log('snatch complete'); }
 			});
 			
 				
@@ -349,27 +382,48 @@ $(document).ready(function () {
 	
 	
 	$('#save').click(function() {
+		
 		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));
+		
+		$.blockUI();
+		
+		$.when(	
+			// first delete income data 
 			$.ajax({
 				url:('/api/dailyincome/'+date8),	
 				type: 'DELETE',
 				dataType: 'json',
 				//data: date8,
-				success: function(data) {
+				//success: 
+				complete: function() {
 					for (i=0; i<incomeData.length; i++) {			
 						incomeData[i].seq=i;
 						incomeData[i].dateStr8=date8;
-						
-						$.ajax({
+						/*$.ajax({
 							url:('/api/dailyincome/'+date8),	
 							type: 'POST',
 							dataType: 'json',
-							data: incomeData[i],					
-						});
-					}
+							data: incomeData[i],
+												
+						});*/
+					};
+					//console.log(incomeData);
+					$.ajax({
+						url: ('/api/dailyincomeset/'+date8),
+						type: 'POST',
+						dataType: 'json',
+						data: { array: incomeData },
+						success: function() {
+										$('#ok-modal').dialog();
+							
+							} // save1 success
+					})
+				},
+				//success: function(){console.log('1')}
+			}),
 					
-				}
-			});
+			
+			
 			$.ajax({
 				url:('/api/dailyexpense/'+date8),	
 				type: 'DELETE',
@@ -379,16 +433,25 @@ $(document).ready(function () {
 						expenseData[i].seq=i;
 						expenseData[i].dateStr8=date8;
 						
-						$.ajax({
+						/*$.ajax({
 							url:('/api/dailyexpense/'+date8),	
 							type: 'POST',
 							dataType: 'json',
 							data: expenseData[i],					
-						});
+						});*/
 					}
+					$.ajax({
+						url:('/api/dailyexpenseset/'+date8),
+						type:'POST',
+						dataType:'json',
+						data: {array: expenseData},
+						success: function() {} //save2 success
+					});
 					
+					console.log('2');
 				}
-			});
+				
+			}),
 			
 			$.ajax({
 				url:('/api/dailycash/'+date8),	
@@ -401,23 +464,40 @@ $(document).ready(function () {
 							cashBossBTaken: balanceData[4].amount,
 							tip: balanceData[5].amount,
 							cashEnd : balanceData[6].amount
-						}
+						},
+				success: function() { console.log('3'); }
 				
 				
-			});
+			}),
 			
 			$.ajax({
 				url:('/api/dailymemo/'+date8),	
 				type: 'POST',
 				dataType: 'json',				
-				data: { 	memo : $('#memo').val() }
-			});
+				data: { 	memo : $('#memo').val() },
+				success: function(){console.log('4');}
+			})
+			
+		).then(
+			function() { 
+				console.log('save complete'); 
+				$.unblockUI();
+			}
+		);
+		
+		
+		
 	});
 	
 	
 	
 	$('#load').click(function() {
-		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));
+		
+		
+		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));		
+		$.blockUI();
+		
+		$.when(	
 			$.ajax({
 				url:('/api/dailyincome/'+date8),	
 				type: 'GET',
@@ -426,15 +506,18 @@ $(document).ready(function () {
 				success: function(data) {
 						//console.log(data);
 						//incomeData.length = 0;
-						incomeData.splice(0,incomeData.length);
-						for(var i in data) {
+						incomeData.splice(0,incomeData.length+1);
+					
+						//for(var i in data) {
+						for (var i=0; i<data.length; i++) {
 							incomeData.push(data[i]);
 						}
 						if (incomeData.length ==0 ) incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
 						$("#incomeTable").handsontable('render');
+						console.log('1');
 					} //end of function
 				
-			});
+			}),
 			$.ajax({
 				url:('/api/dailyexpense/'+date8),	
 				type: 'GET',
@@ -449,9 +532,10 @@ $(document).ready(function () {
 						}
 						if (expenseData.length ==0 ) expenseData.push({  cash:0 } );
 						$("#expenseTable").handsontable('render');
+						console.log('2');
 					} //end of function
 				
-			});
+			}),
 			$.ajax({
 				url:('/api/dailycash/'+date8),	
 				type: 'GET',
@@ -470,17 +554,26 @@ $(document).ready(function () {
 														
 							
 							$("#balanceTable").handsontable('render');
+							console.log('3');
 						}
 				
-			});
+			}),
 			$.ajax({
 				url:('/api/dailymemo/'+date8),	
 				type: 'GET',
-				dataType: 'json',				
+				//dataType: 'json',				
 				success: function(data) {
 							$('#memo').val( data.memo );							
+							console.log('4');
 						}
-			});
+			})
+		).then (
+			function() { 
+				console.log('load complete'); 
+				$.unblockUI();
+			}
+		);
+			
 			
 			
 	});
@@ -533,14 +626,23 @@ $(document).ready(function () {
 	}, 3000);  //every 3 sec
     */	
 	
+	
+	/*
 	$(document).ajaxSend( function() {
 		$.blockUI();
 
 		
 	}).ajaxComplete( function() {
 		$.unblockUI();
+		//$.blockUI({ message: $('#ok-modal') });
 		
 	});
+	
+	$('#ok').click(function() {
+		$.unblockUI();
+	});
+		
+		*/
  
 	
 });
@@ -626,6 +728,10 @@ $(document).ready(function () {
 			</ul>
 		</div>
 		
+		<div id='ok-modal' style='display:none; cursor:default'>
+			<h1> 실행이 완료되었습니다. </h1>
+	
+		</div>
 	
 		
 		

@@ -1,5 +1,5 @@
 //
-// DAA (Dental Affair Assist) 0.1.0
+// DAA (Dental Affair Assist) 0.2.0
 // server.js for node.js
 // programming by hyvaasoft@gmail.com
 // March 2014
@@ -10,12 +10,6 @@
 // 
 
 
-// todo list
-//
-
-// snatch 날짜 보여주기
-// save하고 ok modal 보여주기.
-// render 속도 개선
 
 
 
@@ -23,16 +17,19 @@ var http = require('http');
 var express = require('express');
 var fs = require('fs');
 var app = express();
-var bigint = require('bigint');
+
+
+var doo = require('./doo.js');
+var tool = require('./tool.js');
 
 var myDB = {
 	isConnected: false,	
 	name: "두번에서버",
-	connect: dooConnect,
-	close: dooClose,
-	getDailyDataMine: dooGetDailyDataMine,
-	getDataByName: dooGetDataByName,
-	getDataByChartNo: dooGetDataByChartNo,
+	//connect: dooConnect,
+	//close: dooClose,
+	//getDailyDataMine: doo.getDailyDataMine,
+	//getDataByName: dooGetDataByName,
+	//getDataByChartNo: doo.getDataByChartNo,
 }
 
 var mDB = {
@@ -43,7 +40,7 @@ var mDB = {
 }
 	
 
-myDB.connect();
+doo.connect();
 mDB.connect();
 
 
@@ -57,8 +54,9 @@ function mClose() {
 }
 
 setInterval( function() {
-	if (myDB.isConnected==false) {
-		myDB.connect();
+	
+	if (doo.isConnected()===false) {
+		doo.connect();
 	}
 	
 	
@@ -85,8 +83,6 @@ app.get('/', function (request, response) {
 	fs.readFile('./html/index.html', function (error, data) {
 		response.end(data);
 	})
-	
-	
 }); 
 
 app.get('/status', function (request, response) {
@@ -96,10 +92,7 @@ app.get('/status', function (request, response) {
 		//snatchServerIP : "192.168.0.100",
 		innerServerConnected: mDB.isConnected,
 		innerServerName: mDB.name
-		
 	});
-		
-	
 });
 
 
@@ -110,8 +103,16 @@ app.get('/dailybook', function (request, response) {
 });
 
 
+/*
+app.get('/api/ptlist/:date' function (request, response) { //api for today's patients list
+	//picking data from 1. accept list 2. reservation list 3. pay list
+	var date = request.param('date');
+	
+	
+}
 
-
+*/
+	
 
 
 
@@ -119,7 +120,7 @@ app.get('/dailybook', function (request, response) {
 app.get('/api/dailyincome/:date', function (request, response) { //load
 	var date=request.param('date');
 	mDB.db.income.find({'dateStr8':date}, function (err,docs) {
-		//console.log(docs);
+		console.log(docs);
 		response.send(docs);
 	});
 });
@@ -128,10 +129,9 @@ app.delete('/api/dailyincome/:date', function (request, response) { //delete
 	mDB.db.income.remove({'dateStr8':date});  // clear first
 	response.send({});
 });  
-app.post('/api/dailyincome/:date', function (request, response) {	//save
-	//var pass = false;
+app.post('/api/dailyincome/:date', function (request, response) {	//save 1  //deprecated 
+	
 	var item = {};
-	//var date = toDate(request.param('date'));	
 	
 	item.dateStr8 = request.param('date');
 	
@@ -158,16 +158,51 @@ app.post('/api/dailyincome/:date', function (request, response) {	//save
 	
 	response.send({});
 	
-	
-	
 }); 
+app.post('/api/dailyincomeset/:date', function (request, response) {	//save1 array
+	
+	//console.log(request.body['array']);
+	var a = request.body['array'];
+
+	for (var i in a) {		
+		//console.log(i+'------------');
+		//console.log(a[i]);
+		
+		var item = {};
+		item.dateStr8 = request.param('date');
+		if (a[i].hasOwnProperty('seq')) item.seq = parseInt(a[i]['seq']);
+	
+		if (a[i].hasOwnProperty('chartNo')) item.chartNo = (a[i]['chartNo']);
+		if (a[i].hasOwnProperty('tx')) item.tx = (a[i]['tx']);
+		if (a[i].hasOwnProperty('name')) item.name = (a[i]['name']);
+		
+		if (a[i].hasOwnProperty('ageGender')) item.ageGender = (a[i]['ageGender']);
+		if (a[i].hasOwnProperty('toothNo')) item.toothNo = (a[i]['toothNo']);
+	
+		if (a[i].hasOwnProperty('cashInsu')) item.cashInsu = parseInt(a[i]['cashInsu']);
+		if (a[i].hasOwnProperty('cashNonInsu')) item.cashNonInsu = parseInt(a[i]['cashNonInsu']);
+		if (a[i].hasOwnProperty('cardInsu')) item.cardInsu = parseInt(a[i]['cardInsu']);
+		if (a[i].hasOwnProperty('cardNonInsu')) item.cardNonInsu = parseInt(a[i]['cardNonInsu']);
+		if (a[i].hasOwnProperty('transfer')) item.transfer = parseInt(a[i]['transfer']);
+	
+		if (a[i].hasOwnProperty('toothNoPermanent')) item.toothNoPermanent = parseInt(a[i]['toothNoPermanent']);
+		if (a[i].hasOwnProperty('toothNoDeciduous')) item.toothNoDeciduous = parseInt(a[i]['toothNoDeciduous']);
+		
+		//console.log(item);
+		
+		mDB.db.income.save(item);
+		
+	};
+	response.send({});
+
+});
 
 
 
 app.get('/api/dailyexpense/:date', function (request, response) { 
 	var date=request.param('date');
 	mDB.db.expense.find({'dateStr8':date}, function (err,docs) {
-		//console.log(docs);
+		console.log(docs);
 		response.send(docs);
 	});
 });
@@ -176,10 +211,10 @@ app.delete('/api/dailyexpense/:date', function (request, response) {
 	mDB.db.expense.remove({'dateStr8':date});  // clear first
 	response.send({});
 });
-app.post('/api/dailyexpense/:date', function (request, response) {
+app.post('/api/dailyexpense/:date', function (request, response) {  //save2 //deprecated
 	
 	var item = {};
-	var date = toDate(request.param('date'));	
+	var date = tool.toDate(request.param('date'));	
 	
 	item.dateStr8 = request.param('date');
 		
@@ -188,10 +223,24 @@ app.post('/api/dailyexpense/:date', function (request, response) {
 	if (request.body.hasOwnProperty('details')) item.details = (request.body['details']);
 	if (request.body.hasOwnProperty('cash')) item.cash = parseInt(request.body['cash']);
 	
-	
-	//console.log(item);
-	
 	mDB.db.expense.save(item);
+	
+	response.send({});
+	
+});
+app.post('/api/dailyexpenseset/:date', function (request, response) {  //save2 array
+	var a = request.body['array'];
+	
+	for(var i in a) {
+		var item = {};
+	//var date = tool.toDate(request.param('date'));	
+		item.dateStr8 = request.param('date');
+		if (a[i].hasOwnProperty('seq')) item.seq = parseInt(a[i]['seq']);
+		if (a[i].hasOwnProperty('details')) item.details = (a[i]['details']);
+		if (a[i].hasOwnProperty('cash')) item.cash = parseInt(a[i]['cash']);
+	
+		mDB.db.expense.save(item);
+	};
 	
 	response.send({});
 	
@@ -202,19 +251,15 @@ app.post('/api/dailyexpense/:date', function (request, response) {
 app.get('/api/dailycash/:date', function (request, response) { 
 	var date=request.param('date');
 	mDB.db.dailyCash.findOne({'dateStr8':date}, function (err,docs) {
-		//console.log(docs);
-		
+		console.log(docs);
 		response.send(docs);
 	});
 });
 app.post('/api/dailycash/:date', function (request, response) { 
 	
-	//var date = toDate(request.param('date'));	
 	var item = {};
 	var date = request.param('date');
 	item.dateStr8 = date;
-	
-	
 		
 	if (request.body.hasOwnProperty('cashBegin')) item.cashBegin = parseInt(request.body['cashBegin']);
 	if (request.body.hasOwnProperty('cashIncomeTotal')) item.cashIncomeTotal = parseInt(request.body['cashIncomeTotal']);
@@ -248,8 +293,6 @@ app.post('/api/dailymemo/:date', function (request, response) {
 	
 	item.dateStr8 = date;
 	if (request.body.hasOwnProperty('memo')) item.memo = request.body['memo'];
-	//console.log(request.body);
-	//console.log(item);
 	
 	mDB.db.dailyMemo.remove({'dateStr8':date}); 
 	mDB.db.dailyMemo.save(item);
@@ -260,58 +303,43 @@ app.post('/api/dailymemo/:date', function (request, response) {
 
 app.get('/api/lastcash/:date', function (request, response) {
 	var date8=request.param('date');
-	var date = toDate(date8);
+	var date = tool.toDate(date8);
 	var item = null;
 	
 	
 	mDB.db.dailyCash.find ({'dateStr8':  { $lt: date8}}).sort({'dateStr8':-1} , function (err,docs) {
-		//console.log(docs);
-		console.log(docs[0]);
-		//console.log('er:'+err);
 		
+		console.log(docs[0]);
 		
 		response.send( (docs.length ==0)? {cashEnd:NaN} : docs[0]);
 		
 	});
-		
-	
 	
 });
-
-
-	
-	
-	
-	
-
 
 
 
 
 app.get('/dailydatamine/:date', function (request, response) {
 	var dateStr8 = request.param('date');	
-	var d = toDate(dateStr8);
-	myDB.getDailyDataMine(request, response, d);	
+	var d = tool.toDate(dateStr8);
+	doo.getDailyDataMine(request, response, d);	
 });
 
 app.get('/datamine/name/:name', function (request, response) {
 	var name = request.param('name');
-	myDB.getDataByName(request, response, name);
+	doo.getDataByName(request, response, name);
 });
 
 app.get('/datamine/chart/:chartno', function (request, response) {
 	var chartNo = request.param('chartno');
-	myDB.getDataByChartNo(request, response, chartNo);
+	doo.getDataByChartNo(request, response, chartNo);
 });
 
 app.get('/api/raw/app/:date', function (request, response) {  //get pt that have appointment that day
 	var dateStr8 = request.param('date');	
-	var d = toDate(dateStr8);
-	
-	
-	//console.log( dateStr8+':'+t1+'/'+t2);
-	
-	
+	var d = tool.toDate(dateStr8);
+
 	response.send(dooGetApp(d));
 	
 });
@@ -322,455 +350,11 @@ http.createServer(app).listen(52273, function () {
 });
  
  
-///////////////////////////////////////////////////////////////////////
-//FUNCTIONS
-
-function toEightDigitString(date) {
-	var tempDate = new Date(date.getTime() + (9*60*60*1000));  //because temp-string is UTC value...
-	var temp = tempDate.toISOString();
-	
-	//console.log('1 : '+temp);
-	
-	var result = temp.substr(0,4) + temp.substr(5,2) + temp.substr(8,2);
-	
-	
-	//console.log('2 : '+ result);
-	return (result);
-}	
-
-function toDate(str8) {	
-	var dateString = str8.substr(0,4)+'-'+str8.substr(4,2)+'-'+str8.substr(6,2);	
-	
-	return new Date(dateString);  
-}
-
-function ageGender(now, birth8digit, ssn) {	
-	var interval = (now.getTime() - (toDate(birth8digit)).getTime());
-	var genderDiv = (ssn).substr(6,1);
-	var gender = (genderDiv=='1' || genderDiv=='3')?'M':(genderDiv=='2' || genderDiv=='4')?'F':'?';
-	
-	return '' + Math.floor(interval/ (1000*60*60*24*365)) + gender;
-}
-
-function tooth2str(tn, toAdd) { //tooth number(byte) to string; 
-	var res ='';
-	var bit = [];
-	var i,j,count;
-	
-	
-	bit[0] = tn & 0x01;
-	bit[1] = tn & 0x02;
-	bit[2] = tn & 0x04;
-	bit[3] = tn & 0x08;
-	bit[4] = tn & 0x10;
-	bit[5] = tn & 0x20;
-	bit[6] = tn & 0x40;
-	bit[7] = tn & 0x80;
-	
-	for (i=0; i<8; i++)  {
-		count=0;
-		for (j=i+1; j<8; j++) {
-			count += ((bit[j])?1:0);
-		}
-		if (bit[i]) {
-			res += (toAdd+i+1);
-			res += (count)?',':'';
-		}
-	}
-	
-	return res;
-}
-
-function addComma2(str1, str2) {
-	
-	if (str1=='') {
-		if (str2=='') return '';
-		else return str2;
-	} else {
-		if (str2=='') return str1;
-		else return (str1+','+str2);
-	}
-}
-
-function addComma8(s1,s2,s3,s4,s5,s6,s7,s8) {
-	var res;
-	
-	res = addComma2(s1,s2);
-	res = addComma2(res,s3);
-	res = addComma2(res,s4);
-	res = addComma2(res,s5);
-	res = addComma2(res,s6);
-	res = addComma2(res,s7);
-	res = addComma2(res,s8);
-	
-	return res;
-}	
-
-/////////////////////////////////////////////////////////////////////////
-//DOO SERIES
-
-function dooConnect(){
-
-	myDB.dooDB = require('odbc')();
-	var cn ="DRIVER={FreeTDS};SERVERNAME=TS;UID=sa;PWD=osstem;DATABASE=Hanaro";
-
-	myDB.dooDB.open(cn, function (err) {
-		if (err) { myDB.isConnected=false; return console.log(err);};
-		myDB.isConnected=true;
-		console.log('DB connected now');
-	});		   	
-}
-
-function dooQuery(qstr, param) {
-	var result;
-	if (myDB.isConnected == false) {
-		dooConnect();
-	}
-	
-	try {
-		result = myDB.dooDB.querySync(qstr, param);
-	} catch (err) {
-		myDB.isConnected = false;
-	};
-	return result;
-}
-
-function dooClose() {
-}
-	
-	
-function dooGetApp(date) {
-	var res1;
-	var res=[];
-	
-	
-	
-	var dayBegin = date.getTime()/1000;
-	var dayEnd = dayBegin + 60*60*24;
-	
-	
-	
-	
-	res1 = dooQuery('select * from tb_reservation where BTIME BETWEEN '+dayBegin+' AND '+dayEnd);
-	
-	for (var i=0; i<res1.length; i++) {
-		var item={};
-		var time;
-		item.chartNo = res1[i].PNT_ID;
-		time = new Date(res1[i].BTIME*1000);
-		
-		/*
-		var hh,mm,ss;
-		hh=('0'+time.getHours()).slice(-2);
-		mm=('0'+time.getMinutes()).slice(-2);
-		ss=('0'+time.getSeconds()).slice(-2);
-		
-		item.dateTime = toEightDigitString(time)+ hh+mm+ss;
-		*/
-		item.dateTime = time;
-		
-		item.tx = res1[i].CONTENT;
-		
-		
-		
-		//console.log(item);
-		res.push(item);
-	}
-	return res;
-}
-	
-	
 
 
-function dooGetDailyDataMine(request, response, date){
-	
-	var res1;
-	var res=[];
-	var now = new Date();
-	var card,cash,insu,nonInsu;
-	var toothNum;
-	
-	if ( isNaN (date.getTime())) { // invalid date n time
-		response.send({error:'invalid date'});
-		return;
-	};
-	
-	
-	res1 = dooQuery('select * from tb_account_book where TREATment_DATe='+ toEightDigitString(date));
-	console.log(res1);
-		
-	if (Object.prototype.toString.call(res1) != '[object Array]') res1=[];
-	
-	for (var i=0; i<res1.length; i++) {
-		var item = {};
-		
-		dts = res1[i].ACCOUNT_BOOK_DATE;
-		dateTime = new Date(  parseInt(dts.substr(0,4)), parseInt(dts.substr(4,2))-1, parseInt(dts.substr(6,2)),     //month numbering is zero-based
-								parseInt(dts.substr(8,2)), parseInt(dts.substr(10,2)),parseInt(dts.substr(12,2)),
-								0
-							);
-		item.dateTime = dateTime;
-		console.log(dateTime);
-		
-		
-		
-		item.chartNo = res1[i].PATIENT_ID;
-		
-		item.tx = res1[i].TX_NAME;
-		
-		ptRecord = myDB.dooDB.querySync("select * from tb_patient_info where PNT_ID='"+item.chartNo+"'")[0];
-		
-		item.name = ptRecord.PNT_NAME;
-		item.ageGender = ageGender(now, ptRecord.BIRTH_DAT, ptRecord.RESI_NO);
-		
-		
-		
-		
-		// cash...calc//////////////////////////////////////////////////
-		card=cash=insu=nonInsu=0;				
-				
-	/*	card = parseInt(res1[i].CARD); if  (isNaN(card)) card=0;
-		cash = parseInt(res1[i].CASH); if (isNaN(cash)) cash=0;
-		niof = parseInt(res1[i].NON_INSURANCE_OTHER_FEE); if (isNaN(niof)) niof=0;
-		insucost = parseInt(res1[i].PNT_INSURCOST); if (isNaN(insucost)) insucost=0;
-		noncost= parseInt(res1[i].PNT_NONCOST); if (isNaN(noncost)) noncost=0;		
-		nonInsu = parseInt(res1[i].PNT_NONCOST); if (isNaN(nonInsu)) nonInsu=0;
-		insu = insucost - noncost - niof;
-		*/
-		
-		insu = res1[i].INSURANCE_FEE;
-		nonInsu = res1[i].NON_INSURANCE_FEE;
-
-/*		card_query = "select * from tb_account_book_card_info where ACCOUNT_BOOK_DATE='"+dts+"'";		// and PNT_ID='"+item.chartNo+"'";
-		card_res = myDB.dooDB.querySync(card_query);
-		console.log(card_query);
-		console.log(card_res);
-		
-		card = (card==isNaN)? 0 : parseInt(card);
-		cash = insu+nonInsu-card;
-		
-		
-		
-		//NOw balance into 4 values...
-		cashInsu=cashNonInsu=cardInsu=cardNonInsu=0;
-		if (cash===0) { //all card
-			if (insu===0) cardNonInsu=card;
-			else {cardInsu=insu; cardNonInsu=card-insu;};
-		} else if (card===0) { //all cash
-			if (insu==0) cardNonInsu=cash;
-			else { cashInsu=insu; cashNonInsu=cash-insu;}
-		
-		} else { // cash and card..  difficult -.-;
-			if (insu==0) cardNonInsu=cash+card;
-			else { if (insu>cash) { cardInsu=insu; cardNonInsu=card-insu+cash; }
-					else if (cash==insu) { cashInsu=insu; cardNonInsu=card; }
-					else if (insu <cash) { cashInsu=insu; cashNonInsu=nonInsu-insu; cardNonInsu=card-insu;}
-				}
-		};	
-	*/
-	
-			
-		
-		
-		
-		item.cashInsu = 0;
-		item.cashNonInsu = 0;
-		item.cardInsu = insu;
-		item.cardNonInsu = nonInsu;
-				
-		item.transfer=0;
-		//item.transferChecked=false;
-		
-		
-		///////////////////////////////////////////////////////////////////////////////// 
-		
-		tooth = myDB.dooDB.querySync("select TOOTH from tb_remedy where PNT_ID='"+item.chartNo+"'"+ " and TREATment_DATe="+ toEightDigitString(date));
-		
-		tooth10=tooth20=tooth30=tooth40=0;
-		tooth50=tooth60=tooth70=tooth80=0;
-		full=false;
-		
-		var toothP= new bigint(0);
-		var toothD= new bigint(0);
-		
-		for (var j=0; j<tooth.length; j++) {
-			v = new bigint(tooth[j].TOOTH);
-			
-			toothP = toothP.or(v.and(0xffffffff));
-			toothD = toothD.or(v.shiftRight(32));
-			
-			
-			
-			//toothNum |= v;
-			tooth1= v.and(255); v=v.shiftRight(8);
-			tooth2= v.and(255); v=v.shiftRight(8);
-			tooth3= v.and(255); v=v.shiftRight(8);
-			tooth4= v.and(255); v=v.shiftRight(8);
-			
-			// dediduous teeth			
-			tooth5= v.and(255); v=v.shiftRight(8);
-			tooth6= v.and(255); v=v.shiftRight(8);
-			tooth7= v.and(255); v=v.shiftRight(8);
-			tooth8= v.and(255); 
-			
-			
-			// if full, set flag
-			if (	((tooth1==0xff)||(tooth1==0x7f)) &&
-					((tooth2==0xff)||(tooth2==0x7f)) &&
-					((tooth3==0xff)||(tooth3==0x7f)) &&
-					((tooth4==0xff)||(tooth4==0x7f)) ) full= true;
-					
-			if (	(tooth5==0x1f) &&
-					(tooth6==0x1f) &&
-					(tooth7==0x1f) &&
-					(tooth8==0x1f) ) full= true;
-					
-			// all means nothing
-			tooth1= ((tooth1==0xff)||(tooth1==0x7f))?0:tooth1;
-			tooth2= ((tooth2==0xff)||(tooth2==0x7f))?0:tooth2;
-			tooth3= ((tooth3==0xff)||(tooth3==0x7f))?0:tooth3;
-			tooth4= ((tooth4==0xff)||(tooth4==0x7f))?0:tooth4;
-			tooth5= (tooth5==0x1f)?0:tooth5;
-			tooth6= (tooth6==0x1f)?0:tooth6;
-			tooth7= (tooth7==0x1f)?0:tooth7;
-			tooth8= (tooth8==0x1f)?0:tooth8;
-			
-	
-			tooth10 |=  tooth1; 	tooth20 |=  tooth2;	tooth30 |=  tooth3;	tooth40 |=  tooth4;
-			tooth50 |=  tooth5; 	tooth60 |=  tooth6;	tooth70 |=  tooth7;	tooth80 |=  tooth8;
-			
-		}
-		
-		/*
-		item.toothNo=tooth10.toString(16)+"/"
-					+tooth20.toString(16)+"/"
-					+tooth30.toString(16)+"/"
-					+tooth40.toString(16)+"//"
-					+tooth50.toString(16)+"/"
-					+tooth60.toString(16)+"/"
-					+tooth70.toString(16)+"/"
-					+tooth80.toString(16);
-		
-		*/
-		item.toothNo = addComma2( ((full)?('전악'):'') ,	addComma8(	tooth2str(tooth10,10),
-										tooth2str(tooth20,20),
-										tooth2str(tooth30,30),
-										tooth2str(tooth40,40),
-										tooth2str(tooth50,50),
-										tooth2str(tooth60,60),
-										tooth2str(tooth70,70),
-										tooth2str(tooth80,80)));
-					
-		
-		
-		
-		item.toothNoPermanent= toothP.toNumber();
-		item.toothNoDeciduous= toothD.toNumber();
-			
-			
-		
-		res.push(item);
-	}
-	
-	
-	
-	
-	// ha040 for more .. appointment .
-	var res2 = dooGetApp(date); //appointment list
-	if (Object.prototype.toString.call(res2) != '[object Array]') res2=[];
-	
-	// now check unpaid list.. 결제정보 있는사람은 약속리스트에서 제거 
-	for (var i in res2) {
-		res2[i].toDelete = false;
-		for (var j in res) {
-			
-			if (res2[i].chartNo == res[j].chartNo) {
-				res2[i].toDelete = true;
-				
-				//console.log('out:'+i+':'+j);
-			}
-		}			
-	}
-	//var c=0;
-	//console.log(res2);
-	for (var j in res2) {
-		if  (res2[j].toDelete==true) {}
-		else {
-			//c++;
-		 var item={};
-		 item.chartNo = res2[j].chartNo;
-		 if (item.chartNo.slice(0,4)=='temp') continue;
-		 item.tx = res2[j].tx;
-		 item.dateTime = res2[j].dateTime;
-		 item.cashInsu = item.cashNonInsu = item.cardInsu = item.cardNonInsu = item.transfer=0;
-		 item.toothNo = '-';
-		 //item.name = ... ageGender//////////////////////////////////////////////
-		 var nameRes = dooQuery("select * from tb_patient_info where PNT_ID='"+item.chartNo+"'");
-		 if (nameRes.length!=0) {
-			item.name = nameRes[0].PNT_NAME;
-			item.ageGender = ageGender(now, nameRes[0].BIRTH_DAT, nameRes[0].RESI_NO);
-		}
-		 //console.log(item);
-		 res.push(item);
-		}
-	}
-	
-	//console.log(res2.length+'appointment/'+c+' missed appointments');
-			
-	// ha010 for more .. new patient.. SKIP
-	
-	
-	res.sort( function(a,b){ return (a.dateTime.getTime() - b.dateTime.getTime());} );
-	//console.log(res);
-	response.send(res);
-	
-	
-	
-}
 
 
-function dooGetDataByName(request, response, name) {
-	
-	var res = dooQuery("select * from tb_patient_info where PNT_NAME= ?",[name]);
-	
-	var ret=[];
-	for (i=0; i<res.length; i++) {
-		var item={};
-		item.chartNo = res[i].PNT_ID;
-		item.name = res[i].PNT_NAME;
-		item.ssn = res[i].RESI_NO;
-		item.cellphone = res[i].HP_NO;
-		item.address = res[i].HOME_ADDR;
-		item.zipcode = res[i].HOME_ZIPCD;
-		item.email = res[i].EMAIL;
-		item.birth8digit = res[i].BIRTH_DAT;
-		
-		
-		ret.push(item);
-	}
-	response.send(ret);
 
-}
 
-function dooGetDataByChartNo(request, response, chartNo) {
-	
-	var res = dooQuery("select * from tb_patient_info where PNT_ID='"+chartNo+"'");
-	
-	var ret=[];
-	for (i=0; i<res.length; i++) {
-		var item={};
-		item.chartNo = res[i].PNT_ID;
-		item.name = res[i].PNT_NAME;
-		item.ssn = res[i].RESI_NO;
-		item.cellphone = res[i].HP_NO;
-		item.address = res[i].HOME_ADDR;
-		item.zipcode = res[i].HOME_ZIPCD;
-		item.email = res[i].EMAIL;
-		item.birth8digit = res[i].BIRTH_DAT;
-		
-		ret.push(item);
-	}
-	response.send(ret);
 
-}
 
