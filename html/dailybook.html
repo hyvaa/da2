@@ -326,13 +326,15 @@ $(document).ready(function () {
 			
 	});
 	
-	$('#snatch').click(function() {
+	$('#snatch').click(function() { 
 			
 			$.blockUI();
 			
 			queryDate =  $('#datepicker').datepicker("getDate");
 			//queryDate.setHours(9); // /////////////////////
 			//console.log("query date:"+queryDate);
+			//todo : clear tables...!!
+			
 			$.ajax({
 				url:'/dailydatamine/'+toEightDigitString(queryDate),
 				type: 'GET',
@@ -348,9 +350,16 @@ $(document).ready(function () {
 						incomeData.splice(0+i,0,data[i]);
 					};
 					//$("incomeTable").loaddata(incomeData);
-					$("incomeTable").handsontable('render');				
+					
 				},
-				complete: function() { $.unblockUI(); console.log(incomeData.length+' records found'); console.log('snatch complete'); }
+				complete: function() { 
+					
+					console.log(incomeData.length+' records found'); 
+					console.log('snatch complete'); 
+					$("#incomeTable").handsontable('render');	
+					//todo: reder tables!			
+					$.unblockUI(); 
+				}
 			});
 			
 				
@@ -570,6 +579,10 @@ $(document).ready(function () {
 		).then (
 			function() { 
 				console.log('load complete'); 
+				$("#incomeTable").handsontable('render');
+				$("#incomeSum").handsontable('render');
+				$("#expenseTable").handsontable('render');
+				$("#balanceTable").handsontable('render');
 				$.unblockUI();
 			}
 		);

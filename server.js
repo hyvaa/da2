@@ -119,7 +119,7 @@ app.get('/api/ptlist/:date' function (request, response) { //api for today's pat
 
 app.get('/api/dailyincome/:date', function (request, response) { //load
 	var date=request.param('date');
-	mDB.db.income.find({'dateStr8':date}, function (err,docs) {
+	mDB.db.income.find({'dateStr8':date}).sort({seq:1}, function (err,docs) {
 		console.log(docs);
 		response.send(docs);
 	});
@@ -199,9 +199,9 @@ app.post('/api/dailyincomeset/:date', function (request, response) {	//save1 arr
 
 
 
-app.get('/api/dailyexpense/:date', function (request, response) { 
+app.get('/api/dailyexpense/:date', function (request, response) {   //load2
 	var date=request.param('date');
-	mDB.db.expense.find({'dateStr8':date}, function (err,docs) {
+	mDB.db.expense.find({'dateStr8':date}).sort({seq:1}, function (err,docs) {
 		console.log(docs);
 		response.send(docs);
 	});
