@@ -94,6 +94,8 @@ function ageGender(now, birth8digit, ssn) {
 
 	
 }
+
+
 ////////////////////////////////////////////
 
 
@@ -343,7 +345,7 @@ $(document).ready(function () {
 					//console.log('Here I am!');
 					//console.log(data);
 					//incomeData.length = 0;
-					incomeData.splice(0,incomeData.length+1);
+					incomeData.splice(0,incomeData.length+1); //delete all items
 					console.log(data);
 					incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
 					for(var i in data) {
@@ -357,6 +359,7 @@ $(document).ready(function () {
 					console.log(incomeData.length+' records found'); 
 					console.log('snatch complete'); 
 					$("#incomeTable").handsontable('render');	
+					$("#incomeSum").handsontable('render');	
 					//todo: reder tables!			
 					$.unblockUI(); 
 				}
@@ -506,6 +509,12 @@ $(document).ready(function () {
 		var date8 = toEightDigitString(($('#datepicker').datepicker('getDate')));		
 		$.blockUI();
 		
+		incomeData.splice(0,incomeData.length+1);
+		expenseData.splice(0,expenseData.length);
+		balanceData[0].amount = balanceData[1].amount = balanceData[2].amount = balanceData[3].amount = balanceData[4].amount = 
+			balanceData[5].amount = balanceData[6].amount = 0;
+		$('#memo').val( '' );							
+		
 		$.when(	
 			$.ajax({
 				url:('/api/dailyincome/'+date8),	
@@ -515,14 +524,14 @@ $(document).ready(function () {
 				success: function(data) {
 						//console.log(data);
 						//incomeData.length = 0;
-						incomeData.splice(0,incomeData.length+1);
+						
 					
 						//for(var i in data) {
 						for (var i=0; i<data.length; i++) {
 							incomeData.push(data[i]);
 						}
 						if (incomeData.length ==0 ) incomeData.push({ cashInsu:0,cashNonInsu:0,cardInsu:0,cardNonInsu:0,transfer:0 });
-						$("#incomeTable").handsontable('render');
+						//$("#incomeTable").handsontable('render');
 						console.log('1');
 					} //end of function
 				
@@ -534,13 +543,13 @@ $(document).ready(function () {
 			
 				success: function(data) {
 						
-						//expenseData.length = 0;
-						expenseData.splice(0,expenseData.length);
+						
+						
 						for(var i in data) {
 							expenseData.push(data[i]);
 						}
 						if (expenseData.length ==0 ) expenseData.push({  cash:0 } );
-						$("#expenseTable").handsontable('render');
+						//$("#expenseTable").handsontable('render');
 						console.log('2');
 					} //end of function
 				
@@ -562,7 +571,7 @@ $(document).ready(function () {
 								
 														
 							
-							$("#balanceTable").handsontable('render');
+							//$("#balanceTable").handsontable('render');
 							console.log('3');
 						}
 				
