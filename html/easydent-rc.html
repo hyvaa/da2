@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+   <head>    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+
+    <title>jQuery Mobile</title>
+
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.4/jquery.mobile-1.4.4.min.css" />
+    <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.4.4/jquery.mobile-1.4.4.min.js"></script>
+</head> 
+
+<script>
+
+
+
+$(document).ready(function () {
+	
+	$.ajax({
+				url:'/dailydatamine/20140324',
+				type: 'GET',
+				//data: {
+				success: function(data) {
+					
+					
+					//console.log(data);
+					$('select').append("<option value = '0'>"+"Nothing"+" </option>");
+					for(var i in data) {
+						var date;
+						//console.log(data[i]);
+						
+						/*if (data[i].cardInsu != 0) continue;
+						if (data[i].cardNonInsu != 0) continue;
+						if (data[i].cashInsu != 0) continue;
+						if (data[i].cashNonInsu != 0) continue;
+						*/
+						date = new Date(data[i].dateTime);
+						
+						$('select').append("<option value ='"+data[i].chartNo+"'>"
+							+date.getHours()+":"
+							+(("0"+date.getMinutes()).slice(-2))
+							+" / "   +data[i].name+" / "+data[i].ageGender+" / "+data[i].chartNo+" </option>"
+						);
+					};
+					
+					
+				},
+				complete: function() { }
+			});
+	
+	$('select').on('change', function() {
+		console.log(this.id);
+		console.log(this.value);
+		
+		if (this.value == '0') return;
+		var ip1;
+		
+		/*if (this.id == 'chair-1') ip1 = '192.168.88.218:52273';
+		else if (this.id == 'chair-2') ip1 = '192.168.0.202:52273';
+		else if (this.id == 'chair-3') ip1 = '192.168.0.203:52273';
+		else if (this.id == 'chair-4') ip1 = '192.168.0.204:52273';
+		else if (this.id == 'chair-5') ip1 = '192.168.0.205:52273';
+		*/
+		
+		ip1 = this.id;
+		
+		
+		var ip2=  'http://' + ip1 + '/api/pid-pano/' + this.value;
+		
+		$.ajax({
+				url:ip2,
+				type: 'GET',
+				
+				success: function(data) {},
+				
+				complete: function() { }
+			});
+		
+		
+		
+	});
+	
+	
+});
+
+
+
+</script>
+	
+
+
+
+<body>
+    <div data-role="page">
+        <div data-role="header">
+            <h1>Easydent-RC</h1>
+        </div>
+        <div data-role="content">
+            
+            <div class="ui-field-contain">
+				<label for="chair-1">1번 체어:</label>
+				<select name="chair-1" id="192.168.88.218:52273"> </select>
+			</div>
+			<div class="ui-field-contain">
+				<label for="chair-2">2번 체어:</label>
+				<select name="chair-2" id="192.168.88.202:52273"> </select>
+			</div>
+			<div class="ui-field-contain">
+				<label for="chair-3">3번 체어:</label>
+				<select name="chair-3" id="192.168.88.203:52273"> </select>
+			</div>
+			<div class="ui-field-contain">
+				<label for="chair-4">4번 체어:</label>
+				<select name="chair-4" id="192.168.88.204:52273"> </select>
+			</div>
+			<div class="ui-field-contain">
+				<label for="chair-5">5번 체어:</label>
+				<select name="chair-5" id="192.168.88.205:52273"> </select>
+			</div>
+			
+			
+            
+            
+            
+            
+            
+        </div>
+        <!--
+        <div data-role="footer" data-position="fixed">
+
+		<form align='center'>
+			<fieldset data-role="controlgroup" data-type="horizontal">
+				
+				<input type="radio" name="radio-choice-h-2" id="radio-choice-h-2a" value="on" checked="checked">
+				<label for="radio-choice-h-2a">파노라마</label>
+				<input type="radio" name="radio-choice-h-2" id="radio-choice-h-2b" value="off">
+				<label for="radio-choice-h-2b">스탠다드</label>
+				<input type="radio" name="radio-choice-h-2" id="radio-choice-h-2c" value="other">
+				<label for="radio-choice-h-2c">기타</label>
+			</fieldset>
+		</form>
+		<form align='center'>
+			<fieldset data-role="controlgroup" data-type="horizontal">
+				
+				<input type="radio" name="radio-choice-l-2" id="radio-choice-l-2a" value="on" checked="checked">
+				<label for="radio-choice-l-2a">리스트 모두 보이기</label></label>
+				<input type="radio" name="radio-choice-l-2" id="radio-choice-l-2b" value="off">
+				<label for="radio-choice-l-2b">리스트 추천만 보이기</label>
+				<input type="radio" name="radio-choice-l-2" id="radio-choice-l-2c" value="other">
+				<label for="radio-choice-l-2c">기타</label>
+			</fieldset>
+		</form>
+		<form align='center'>
+			<input type="button" value="리로드 리스트">
+    
+		</form>
+
+
+            
+        </div>
+        -->
+    </div>
+</body>

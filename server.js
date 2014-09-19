@@ -67,6 +67,7 @@ setInterval( function() {
 app.use(express.favicon(__dirname+'/public/3127.ico'));  //////////////////////////////////////////
 app.use(express.static('public'));
 
+
 app.use(express.bodyParser());
 app.use(app.router);
 
@@ -102,18 +103,26 @@ app.get('/dailybook', function (request, response) {
 	}); 
 });
 
+app.get('/easydent-rc', function (request, response) {
+	fs.readFile('./html/easydent-rc.html', function (error, data) {
+		response.end(data);
+	}); 
+});
 
-/*
-app.get('/api/ptlist/:date' function (request, response) { //api for today's patients list
+
+app.get('/api/todayptlist', function (request, response) { //api for today's patients list   ///일단 dailydatamine copy.. // 수정 필요함 
 	//picking data from 1. accept list 2. reservation list 3. pay list
-	var date = request.param('date');
 	
+	var date=request.param('date');
+	mDB.db.income.find({'dateStr8':date}).sort({seq:1}, function (err,docs) {
+		console.log(docs);
+		response.send(docs);
+	});
+});
 	
-}
-
+/*	
+app.get('/api/chairips' function (request, response) {
 */
-	
-
 
 
 
@@ -343,6 +352,17 @@ app.get('/api/raw/app/:date', function (request, response) {  //get pt that have
 	response.send(dooGetApp(d));
 	
 });
+
+
+/*
+app.get('/:page', function (request, response) {
+	file = './html/'+request.param('page');
+	//console.log(file);
+	fs.readFile(file, function (error, data) {
+		response.end(data);
+	})
+});  */
+	
 
 
 http.createServer(app).listen(52273, function () {
