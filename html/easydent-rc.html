@@ -12,13 +12,21 @@
 </head> 
 
 <script>
-
+function toEightDigitString(date) {
+	var tempDate = new Date(date.getTime() + (9*60*60*1000));  //because temp-string is UTC value...
+	var temp = tempDate.toISOString();
+	var result = temp.substr(0,4) + temp.substr(5,2) + temp.substr(8,2);
+	
+	return (result);
+}
 
 
 $(document).ready(function () {
 	
+	var today = new Date();
+	
 	$.ajax({
-				url:'/dailydatamine/20140324',
+				url:'/dailydatamine/'+toEightDigitString(today),  //20140324
 				type: 'GET',
 				//data: {
 				success: function(data) {
@@ -50,8 +58,8 @@ $(document).ready(function () {
 			});
 	
 	$('select').on('change', function() {
-		console.log(this.id);
-		console.log(this.value);
+		//console.log(this.id);
+		//console.log(this.value);
 		
 		if (this.value == '0') return;
 		var ip1;
